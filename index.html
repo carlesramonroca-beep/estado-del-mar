@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firusub · Estado del mar Sant Elm</title>
+<style>
+:root{--bg:#0b1f2e;--card:#12304a;--ink:#e8f1f8;--mut:#8fb0c8;--ok:#2ecc71;--warn:#f1c40f;--no:#e74c3c;--acc:#3fa9f5}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:16px 18px 8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+h1{font-size:1.25rem;margin:0}
+h2{font-size:1rem;margin:0 0 10px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+main{padding:0 14px 40px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));max-width:1200px;margin:0 auto}
+.card{background:var(--card);border-radius:14px;padding:16px}
+.wide{grid-column:1/-1}
+.light{display:flex;gap:16px;align-items:center}
+.dot{width:86px;height:86px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.95rem;color:#0b1f2e;text-align:center}
+.ok{background:var(--ok)}.warn{background:var(--warn)}.no{background:var(--no)}.na{background:#567}
+.reasons{margin:6px 0 0;padding-left:18px;color:var(--mut);font-size:.9rem}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.92rem}
+.kv span:nth-child(odd){color:var(--mut)}
+button,input,select{font:inherit}
+button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer}
+button.sec{background:#2a4d6b}
+input,select{background:#0b1f2e;color:var(--ink);border:1px solid #2a4d6b;border-radius:8px;padding:6px 8px;width:100%}
+label{font-size:.85rem;color:var(--mut);display:block;margin-top:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.timeline{display:flex;overflow-x:auto;gap:3px;padding-bottom:6px}
+.slot{min-width:34px;text-align:center;font-size:.72rem;color:var(--mut)}
+.slot .b{height:28px;border-radius:5px;margin:3px 0}
+.slot.day{border-left:2px solid #456;padding-left:2px}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+td,th{padding:4px 6px;border-bottom:1px solid #1f405e;text-align:left}
+th{color:var(--mut);font-weight:600}
+.small{font-size:.8rem;color:var(--mut)}
+a{color:var(--acc)}
+#err{color:var(--no)}
+svg text{fill:var(--mut);font-size:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌊 Firusub · Mar en Sant Elm</h1>
+  <div><span id="upd" class="small"></span> <button onclick="load()">Actualizar</button></div>
+</header>
+<main>
+
+<section class="card wide" id="parteCard" style="display:none">
+  <h2>Parte de Claude · previsión contra realidad</h2>
+  <div class="light"><div id="parteDot" class="dot na"></div><div><div id="parteTitle" style="font-weight:700"></div><div id="parteText" class="small" style="color:var(--ink);margin-top:4px"></div><div id="parteAvisos" class="small" style="color:var(--warn);margin-top:6px"></div><div id="parteMeta" class="small" style="margin-top:6px"></div></div></div>
+</section>
+
+<section class="card">
+  <h2>Ahora</h2>
+  <div class="light"><div id="nowDot" class="dot na">…</div><div><div id="nowTitle" style="font-weight:700"></div><ul id="nowReasons" class="reasons"></ul></div></div>
+  <div class="kv" id="nowKv" style="margin-top:12px"></div>
+  <div id="err" class="small"></div>
+</section>
+
+<section class="card">
+  <h2>Muelle y dirección del mar</h2>
+  <svg id="rose" viewBox="-110 -110 220 220" width="100%" style="max-height:260px"></svg>
+  <div class="small">Rojo = cuánto mar llega a la amarra según de dónde viene (más intenso, más expuesto). Verde = los dos lados de amarre. Flecha azul = mar de fondo, blanca = mar de viento, amarilla = viento. Las flechas apuntan hacia donde va el mar.</div>
+</section>
+
+<section class="card wide">
+  <h2>Próximas 72 h · salir con la barca</h2>
+  <div class="timeline" id="timeline"></div>
+  <div class="small">Pasa el dedo o el ratón por encima de cada hora para ver el detalle. Se usa la predicción corregida con tus observaciones (si las hay).</div>
+  <div id="slotInfo" class="small" style="margin-top:8px;color:var(--ink)"></div>
+</section>
+
+<section class="card wide">
+  <h2>Altura de ola: modelos comparados</h2>
+  <svg id="chart" viewBox="0 0 900 220" width="100%"></svg>
+  <div id="legend" class="small"></div>
+  <div id="spread" class="small" style="margin-top:6px"></div>
+</section>
+
+<section class="card">
+  <h2>Lo que hay realmente</h2>
+  <p class="small">Anota lo que ves en el muelle. La app compara tu dato con lo que decían los modelos a esa hora y corrige la predicción. Cuanto más anotes, mejor se ajusta a Sant Elm.</p>
+  <div class="row">
+    <div><label>Ola en el muelle (m)</label><input id="obsH" type="number" step="0.1" min="0"></div>
+    <div><label>¿Se pudo embarcar?</label><select id="obsOk"><option value="1">Sí, bien</option><option value="0.5">Justo</option><option value="0">No</option></select></div>
+  </div>
+  <label>Nota (opcional)</label><input id="obsNote" placeholder="p. ej. resaca en la escalera, mar de fondo del SW">
+  <div style="margin-top:10px;display:flex;gap:8px"><button onclick="addObs()">Guardar observación</button><button class="sec" onclick="clearObs()">Borrar todas</button></div>
+  <div id="bias" class="small" style="margin-top:10px"></div>
+  <table id="obsTable" style="margin-top:8px"></table>
+  <p class="small">Consultar también: <a href="https://www.windy.com/39.579/2.349?waves,39.579,2.349,11" target="_blank" rel="noopener">Windy (oleaje)</a> · <a href="https://www.aemet.es/es/eltiempo/prediccion/avisos" target="_blank" rel="noopener">Avisos AEMET</a> · <a href="https://www.aemet.es/es/eltiempo/observacion/rayos" target="_blank" rel="noopener">Rayos AEMET</a> · <a href="https://www.lightningmaps.org/" target="_blank" rel="noopener">Rayos en directo</a></p>
+  <p class="small">Datos medidos (boya de Dragonera): <a href="https://portus.puertos.es/" target="_blank" rel="noopener">Portus · Puertos del Estado</a> · Avisos: <a href="https://www.aemet.es/es/eltiempo/prediccion/maritima" target="_blank" rel="noopener">AEMET marítima</a></p>
+</section>
+
+<section class="card">
+  <h2>Webcams en directo</h2>
+  <p class="small">Para comprobar con tus ojos lo que dicen los modelos antes de ir al muelle.</p>
+  <ul style="margin:0;padding-left:18px;line-height:1.9">
+    <li><a href="https://www.skylinewebcams.com/webcam/espana/islas-baleares/mallorca/platja-de-sant-elm.html" target="_blank" rel="noopener">Playa de Sant Elm · SkylineWebcams</a></li>
+    <li><a href="https://www.mallorcamagazin.com/webcams.html" target="_blank" rel="noopener">Playa de Sant Elm y Port d'Andratx · Mallorca Magazin</a></li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>Ajustes del muelle y límites</h2>
+  <label>Cuánto mar llega a la amarra según de dónde viene (0 = nada, 1 = todo), en orden N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW</label><input id="fac">
+  <div class="row">
+    <div><label>Ola en muelle: precaución (m)</label><input id="tEmbW" type="number" step="0.1"></div>
+    <div><label>Ola en muelle: no embarcar (m)</label><input id="tEmbN" type="number" step="0.1"></div>
+  </div>
+  <div class="row">
+    <div><label>Ola mar abierto: precaución (m)</label><input id="tNavW" type="number" step="0.1"></div>
+    <div><label>Ola mar abierto: no salir (m)</label><input id="tNavN" type="number" step="0.1"></div>
+  </div>
+  <div class="row">
+    <div><label>Viento medio: precaución / no (kn)</label><input id="tWindW" type="number"></div>
+    <div><label>&nbsp;</label><input id="tWindN" type="number"></div>
+  </div>
+  <div class="row">
+    <div><label>Rachas: precaución / no (kn)</label><input id="tGustW" type="number"></div>
+    <div><label>&nbsp;</label><input id="tGustN" type="number"></div>
+  </div>
+  <div class="row">
+    <div><label>Horario de salidas (h inicio–fin)</label><input id="hours" placeholder="8-19"></div>
+  </div>
+  <div class="row">
+    <div><label>Punto de oleaje lat</label><input id="wLat" type="number" step="0.001"></div>
+    <div><label>lon</label><input id="wLon" type="number" step="0.001"></div>
+  </div>
+  <div style="margin-top:10px;display:flex;gap:8px"><button onclick="saveCfg()">Guardar y recalcular</button><button class="sec" onclick="resetCfg()">Valores por defecto</button></div>
+  <p class="small">Valores iniciales orientativos para una semirrígida de 6 m. Ajústalos a tu criterio: tú conoces el muelle.</p>
+</section>
+
+<section class="card wide small">
+  Predicciones: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (modelos de oleaje Météo-France MFWAM, ECMWF WAM y DWD GWAM; viento AROME/ARPEGE, ECMWF IFS e ICON). Esta herramienta ayuda a decidir; la decisión final es siempre del responsable de la embarcación.
+</section>
+</main>
+
+<script>
+const DEFAULTS={fac:"0,0,0.05,0.1,0.15,0.3,0.6,0.85,1,1,0.85,0.6,0.35,0.15,0.05,0",tEmbW:0.4,tEmbN:0.7,tNavW:1.5,tNavN:2.0,tWindW:16,tWindN:22,tGustW:22,tGustN:28,hours:"8-19",wLat:39.56,wLon:2.30};
+const WIND_PT={lat:39.579,lon:2.349};
+const WAVE_MODELS=[["best_match","Mejor combinación"],["meteofrance_wave","Météo-France MFWAM"],["ecmwf_wam025","ECMWF WAM"],["gwam","DWD GWAM"]];
+const WIND_MODELS=[["best_match","Mejor combinación"],["meteofrance_seamless","Météo-France AROME/ARPEGE"],["ecmwf_ifs025","ECMWF IFS"],["icon_seamless","DWD ICON"]];
+const COLORS=["#ffffff","#3fa9f5","#2ecc71","#e67e22"];
+let CFG, DATA=null, PARTE=null;
+const DIRS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const SIDES=[{name:"lado diagonal (da al ESE)",n:125},{name:"lado recto (da al S)",n:180}];
+function facArr(){const a=String(CFG.fac).split(",").map(Number);return a.length===16&&a.every(x=>!isNaN(x))?a:DEFAULTS.fac.split(",").map(Number)}
+
+function store(k,v){try{if(v===undefined){return JSON.parse(localStorage.getItem(k))}localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}}
+function loadCfg(){CFG=Object.assign({},DEFAULTS,store("fs_cfg")||{});for(const k in DEFAULTS){const el=document.getElementById(k);if(el)el.value=CFG[k]}}
+function saveCfg(){for(const k in DEFAULTS){const el=document.getElementById(k);CFG[k]=typeof DEFAULTS[k]==="number"?parseFloat(el.value):el.value}store("fs_cfg",CFG);load()}
+function resetCfg(){store("fs_cfg",{});loadCfg();load()}
+function getObs(){return store("fs_obs")||[]}
+
+const deg2=(a)=>((a%360)+360)%360;
+function angDist(a,b){const d=Math.abs(deg2(a)-deg2(b));return Math.min(d,360-d)}
+function inSector(dir,from,to){dir=deg2(dir);from=deg2(from);to=deg2(to);return from<=to?(dir>=from&&dir<=to):(dir>=from||dir<=to)}
+// exposure factor 0..1 for a direction (where waves come FROM), interpolated from the 16-sector table
+function exposure(dir){
+  const f=facArr();if(dir==null||isNaN(dir))return 0.3;
+  const x=deg2(dir)/22.5,i=Math.floor(x)%16,j=(i+1)%16,t=x-Math.floor(x);
+  return f[i]*(1-t)+f[j]*t;
+}
+function bestSide(h){
+  const d=(h.swH||0)>=(h.wwH||0)?h.swD:h.wwD;if(d==null)return null;
+  const sc=SIDES.map(sd=>({sd,e:Math.max(0,Math.cos(angDist(d,sd.n)*Math.PI/180))}));
+  sc.sort((a,b)=>a.e-b.e);return sc[0].e<sc[1].e-0.15?sc[0].sd.name:null;
+}
+// model estimate of wave height at the dock
+function dockHs(h){
+  const sw=(h.swH||0)*exposure(h.swD)*((h.swT||0)>8?1.2:1);
+  const ww=(h.wwH||0)*exposure(h.wwD);
+  let v=Math.sqrt(sw*sw+ww*ww);
+  if(!h.swH&&!h.wwH&&h.hs!=null)v=h.hs*exposure(h.dir);
+  return v;
+}
+function biasFactor(){
+  const obs=getObs().filter(o=>o.model>0.05&&o.h!=null);
+  if(obs.length<2){if(PARTE&&PARTE.correccion)return {f:PARTE.correccion,n:obs.length,src:"claude"};return {f:1,n:obs.length}}
+  const r=obs.slice(-15).map(o=>o.h/o.model).sort((a,b)=>a-b);
+  const med=r[Math.floor(r.length/2)];
+  return {f:Math.max(0.3,Math.min(3,med)),n:obs.length};
+}
+function stormLevel(h){if(h.wcode!=null&&h.wcode>=95)return 2;if(h.cape!=null&&h.cape>=1000)return 1;if(h.cape!=null&&h.cape>=500&&(h.pp||0)>=40)return 1;return 0}
+function stormTxt(h){const l=stormLevel(h);return ["Bajo","Medio","ALTO"][l]+(h.cape!=null?` (CAPE ${Math.round(h.cape)} J/kg)`:"")}
+function level(v,w,n){return v==null||isNaN(v)?0:v>=n?2:v>=w?1:0}
+function evaluate(h,bf){
+  const reasons=[];let worst=0;
+  const dock=dockHs(h)*bf;
+  const L1=level(dock,CFG.tEmbW,CFG.tEmbN);
+  if(L1)reasons.push(`Ola estimada en el muelle ${dock.toFixed(2)} m`);
+  const L2=level(h.hs,CFG.tNavW,CFG.tNavN);
+  if(L2)reasons.push(`Ola en mar abierto ${h.hs.toFixed(1)} m`);
+  const L3=level(h.ws,CFG.tWindW,CFG.tWindN);
+  if(L3)reasons.push(`Viento ${Math.round(h.ws)} kn de ${card(h.wd)}`);
+  const L4=level(h.wg,CFG.tGustW,CFG.tGustN);
+  if(L4)reasons.push(`Rachas ${Math.round(h.wg)} kn`);
+  const L5=stormLevel(h);
+  if(L5===2)reasons.push("Tormenta prevista: riesgo de rayos");else if(L5===1)reasons.push(`Atmósfera inestable (CAPE ${Math.round(h.cape)}): posible tormenta`);
+  worst=Math.max(L1,L2,L3,L4,L5);
+  if(h.swD!=null&&exposure(h.swD)>=0.6&&h.swH>0.2)reasons.push(`Mar de fondo entrando al muelle (${card(h.swD)}, ${h.swT?h.swT.toFixed(0):"?"} s)`);
+  if(h.dir!=null&&exposure(h.dir)<=0.2&&h.hs>0.5)reasons.push(`Mar de ${card(h.dir)}: el muelle queda abrigado, en la amarra habrá mucho menos que mar adentro`);
+  return {lvl:worst,dock,reasons};
+}
+function card(d){if(d==null||isNaN(d))return"–";const n=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];return n[Math.round(deg2(d)/22.5)%16]+` (${Math.round(d)}°)`}
+const LBL=["SALIR","PRECAUCIÓN","NO SALIR"],CLS=["ok","warn","no"];
+
+async function getJSON(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status+" "+u);return r.json()}
+async function load(){
+  document.getElementById("err").textContent="";
+  document.getElementById("upd").textContent="Cargando…";
+  const common="&timezone=Europe%2FMadrid&past_days=1&forecast_days=3";
+  const wv="wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period,wind_wave_height,wind_wave_direction";
+  const waveReq=WAVE_MODELS.map(([m])=>getJSON(`https://marine-api.open-meteo.com/v1/marine?latitude=${CFG.wLat}&longitude=${CFG.wLon}&hourly=${wv}&current=${wv}&models=${m}${common}`));
+  const windReq=WIND_MODELS.map(([m])=>getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${WIND_PT.lat}&longitude=${WIND_PT.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,cape,weather_code,precipitation_probability&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&models=${m}${common}`));
+  try{const pr=await fetch("parte.json?t="+Date.now());if(pr.ok)PARTE=await pr.json()}catch(e){}
+  const res=await Promise.allSettled([...waveReq,...windReq]);
+  const waves=res.slice(0,WAVE_MODELS.length).map(r=>r.status==="fulfilled"?r.value:null);
+  const winds=res.slice(WAVE_MODELS.length).map(r=>r.status==="fulfilled"?r.value:null);
+  if(!waves[0]&&!waves[1]){document.getElementById("err").textContent="No se han podido descargar datos de oleaje. Comprueba la conexión a internet.";document.getElementById("upd").textContent="";return}
+  DATA={waves,winds};
+  render();
+  document.getElementById("upd").textContent="Actualizado "+new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
+}
+function pick(arr,i){return arr&&arr[i]!=null?arr[i]:null}
+function hourRow(i){
+  const w=DATA.waves.find(x=>x&&x.hourly&&pick(x.hourly.wave_height,i)!=null)||DATA.waves.find(x=>x);
+  const wi=DATA.winds.find(x=>x&&x.hourly&&pick(x.hourly.wind_speed_10m,i)!=null);
+  const H=w.hourly,W=wi?wi.hourly:{};
+  const S=(DATA.winds[0]&&DATA.winds[0].hourly)||W;
+  return {cape:pick(S.cape,i),wcode:pick(S.weather_code,i),pp:pick(S.precipitation_probability,i),t:H.time[i],hs:pick(H.wave_height,i),dir:pick(H.wave_direction,i),tp:pick(H.wave_period,i),swH:pick(H.swell_wave_height,i),swD:pick(H.swell_wave_direction,i),swT:pick(H.swell_wave_period,i),wwH:pick(H.wind_wave_height,i),wwD:pick(H.wind_wave_direction,i),ws:pick(W.wind_speed_10m,i),wd:pick(W.wind_direction_10m,i),wg:pick(W.wind_gusts_10m,i)};
+}
+function nowIndex(){const base=(DATA.waves.find(x=>x)).hourly.time;const now=new Date();let best=0;base.forEach((t,i)=>{if(new Date(t)<=now)best=i});return best}
+
+function nowRow(){
+  const ni=nowIndex();const hr=hourRow(ni);
+  const w0=DATA.waves.find(x=>x&&x.current&&x.current.wave_height!=null);
+  const wn=DATA.winds.find(x=>x&&x.current&&x.current.wind_speed_10m!=null);
+  const c=w0?w0.current:{},cw=wn?wn.current:{};
+  return Object.assign(hr,{hs:c.wave_height??hr.hs,dir:c.wave_direction??hr.dir,swH:c.swell_wave_height??hr.swH,swD:c.swell_wave_direction??hr.swD,swT:c.swell_wave_period??hr.swT,wwH:c.wind_wave_height??hr.wwH,wwD:c.wind_wave_direction??hr.wwD,ws:cw.wind_speed_10m??hr.ws,wd:cw.wind_direction_10m??hr.wd,wg:cw.wind_gusts_10m??hr.wg});
+}
+function renderParte(){
+  const c=document.getElementById("parteCard");if(!PARTE){c.style.display="none";return}
+  c.style.display="";const m={cumple:["ok","SE CUMPLE"],menor:["ok","HAY MENOS"],mayor:["no","HAY MÁS"]}[PARTE.estado]||["na","—"];
+  const d=document.getElementById("parteDot");d.className="dot "+m[0];d.textContent=m[1];
+  document.getElementById("parteTitle").textContent=PARTE.titulo||"";
+  document.getElementById("parteText").textContent=PARTE.texto||"";
+  const t=PARTE.actualizado?new Date(PARTE.actualizado):null;const old=t&&(Date.now()-t)>12*3600e3;
+  document.getElementById("parteAvisos").innerHTML=(PARTE.avisos?`⚠️ <b>Avisos AEMET:</b> ${String(PARTE.avisos).replace(/</g,"&lt;")}<br>`:"")+(PARTE.rayos?`⚡ <b>Rayos:</b> ${String(PARTE.rayos).replace(/</g,"&lt;")}`:"");
+  document.getElementById("parteMeta").innerHTML=(t?`Revisado ${t.toLocaleString("es-ES",{weekday:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}`:"")+(PARTE.boya?` · Boya Dragonera: ${PARTE.boya}`:"")+(PARTE.correccion?` · Corrección aplicada ×${Number(PARTE.correccion).toFixed(2)}`:"")+(old?" · <b>parte antiguo, puede no estar al día</b>":"");
+}
+function render(){
+  renderParte();
+  const bf=biasFactor();const ni=nowIndex();
+  const w0=DATA.waves.find(x=>x);const now=nowRow();
+  const ev=evaluate(now,bf.f);
+  const dot=document.getElementById("nowDot");dot.className="dot "+CLS[ev.lvl];dot.textContent=LBL[ev.lvl];
+  document.getElementById("nowTitle").textContent=ev.lvl===0?"Condiciones dentro de tus límites":ev.lvl===1?"Valorar en el muelle antes de embarcar":"Fuera de límites: anular o retrasar";
+  document.getElementById("nowReasons").innerHTML=(ev.reasons.length?ev.reasons:["Sin factores limitantes"]).map(r=>`<li>${r}</li>`).join("");
+  const f=(v,d=1,u="")=>v==null?"–":v.toFixed(d)+u;
+  document.getElementById("nowKv").innerHTML=[
+    ["Ola mar abierto",f(now.hs,1," m")+(now.tp?` · ${now.tp.toFixed(0)} s`:"")],
+    ["Mar de fondo",f(now.swH,1," m")+" de "+card(now.swD)],
+    ["Mar de viento",f(now.wwH,1," m")+" de "+card(now.wwD)],
+    ["Ola est. muelle",f(ev.dock,2," m")+(bf.f!==1?` (corregida ×${bf.f.toFixed(2)})`:"")],
+    ["Viento",f(now.ws,0," kn")+" de "+card(now.wd)],
+    ["Rachas",f(now.wg,0," kn")],
+    ["Tormenta / rayos",stormTxt(now)],
+    ["Mejor amarre",bestSide(now)||"indiferente"]
+  ].map(([a,b])=>`<span>${a}</span><span>${b}</span>`).join("");
+  drawRose(now);
+  // timeline
+  const [h0,h1]=(CFG.hours||"8-19").split("-").map(Number);
+  const T=w0.hourly.time;let html="";const slots=[];
+  for(let i=ni;i<T.length;i++){const d=new Date(T[i]);const hr=d.getHours();if(hr<h0||hr>h1)continue;const r=hourRow(i);const e=evaluate(r,bf.f);slots.push({r,e});
+    const day=hr===h0||i===ni;html+=`<div class="slot${day?" day":""}" data-k="${slots.length-1}">${day?d.toLocaleDateString("es-ES",{weekday:"short",day:"numeric"}):"&nbsp;"}<div class="b ${CLS[e.lvl]}"></div>${hr}h</div>`}
+  const tl=document.getElementById("timeline");tl.innerHTML=html;
+  tl.querySelectorAll(".slot").forEach(el=>{const s=slots[el.dataset.k];const show=()=>{document.getElementById("slotInfo").innerHTML=`<b>${new Date(s.r.t).toLocaleString("es-ES",{weekday:"long",hour:"2-digit",minute:"2-digit"})}</b> · ${LBL[s.e.lvl]} · Ola ${f(s.r.hs,1," m")} (${card(s.r.dir)}) · muelle ${f(s.e.dock,2," m")} · viento ${f(s.r.ws,0)}/${f(s.r.wg,0)} kn ${card(s.r.wd)}${s.e.reasons.length?" — "+s.e.reasons.join("; "):""}`};el.onmouseenter=show;el.onclick=show});
+  drawChart(ni);
+  renderObs(bf);
+}
+
+function drawRose(n){
+  const s=document.getElementById("rose");let g="";
+  g+=`<circle r="95" fill="none" stroke="#2a4d6b"/><circle r="60" fill="none" stroke="#1f405e"/>`;
+  // sector (bearing FROM) drawn on the side waves come from
+  const P=(a,r)=>[Math.sin(a*Math.PI/180)*r,-Math.cos(a*Math.PI/180)*r];
+  facArr().forEach((v,i)=>{const c=i*22.5,[x1,y1]=P(c-11.25,95),[x2,y2]=P(c+11.25,95);g+=`<path d="M0 0 L${x1} ${y1} A95 95 0 0 1 ${x2} ${y2} Z" fill="rgba(231,76,60,${(0.55*v).toFixed(2)})" stroke="#1f405e"/>`});
+  SIDES.forEach(sd=>{const [x,y]=P(sd.n,22);g+=`<line x1="${-y*0.8}" y1="${x*0.8}" x2="${y*0.8}" y2="${-x*0.8}" stroke="#2ecc71" stroke-width="4" transform="translate(${x*0.35} ${y*0.35})"/>`});
+  ["N","E","S","W"].forEach((t,i)=>{const [x,y]=P(i*90,104);g+=`<text x="${x}" y="${y+3}" text-anchor="middle">${t}</text>`});
+  g+=`<text x="0" y="40" text-anchor="middle">muelle</text>`;
+  const arrow=(dir,len,col,w)=>{if(dir==null)return"";const [sx,sy]=P(dir,90);const [ex,ey]=P(dir,90-len);
+    return `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="${col}" stroke-width="${w}" marker-end="url(#m${col.slice(1)})"/>`};
+  let defs="<defs>";["3fa9f5","ffffff","f1c40f"].forEach(c=>defs+=`<marker id="m${c}" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#${c}"/></marker>`);defs+="</defs>";
+  g+=arrow(n.swD,Math.min(80,20+(n.swH||0)*40),"#3fa9f5",5)+arrow(n.wwD,Math.min(80,20+(n.wwH||0)*40),"#ffffff",3)+arrow(n.wd,Math.min(80,15+(n.ws||0)*2),"#f1c40f",2);
+  s.innerHTML=defs+g;
+}
+
+function drawChart(ni){
+  const svg=document.getElementById("chart");const W=900,H=220,pl=34,pb=24,pt=10;
+  const T=(DATA.waves.find(x=>x)).hourly.time;const N=T.length;
+  let max=0.5;DATA.waves.forEach(w=>{if(w)w.hourly.wave_height.forEach(v=>{if(v!=null&&v>max)max=v})});max=Math.ceil(max*2)/2;
+  const X=i=>pl+(W-pl-6)*i/(N-1),Y=v=>pt+(H-pt-pb)*(1-v/max);
+  let g="";
+  for(let v=0;v<=max;v+=0.5)g+=`<line x1="${pl}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="#1f405e"/><text x="${pl-4}" y="${Y(v)+3}" text-anchor="end">${v}</text>`;
+  g+=`<line x1="${pl}" x2="${W}" y1="${Y(CFG.tNavW)}" y2="${Y(CFG.tNavW)}" stroke="#f1c40f" stroke-dasharray="4 4" opacity=".6"/>`;
+  T.forEach((t,i)=>{const d=new Date(t);if(d.getHours()===0)g+=`<line x1="${X(i)}" x2="${X(i)}" y1="${pt}" y2="${H-pb}" stroke="#2a4d6b"/><text x="${X(i)+3}" y="${H-8}">${d.toLocaleDateString("es-ES",{weekday:"short",day:"numeric"})}</text>`});
+  g+=`<line x1="${X(ni)}" x2="${X(ni)}" y1="${pt}" y2="${H-pb}" stroke="#e74c3c"/><text x="${X(ni)+3}" y="${pt+10}" fill="#e74c3c">ahora</text>`;
+  // observations
+  getObs().forEach(o=>{const idx=T.findIndex(t=>Math.abs(new Date(t)-new Date(o.t))<1800e3);if(idx>=0)g+=`<circle cx="${X(idx)}" cy="${Y(o.h/Math.max(exposureNow(o),0.05))}" r="4" fill="#e74c3c"><title>Observado</title></circle>`});
+  let leg="";
+  DATA.waves.forEach((w,k)=>{if(!w)return;const pts=w.hourly.wave_height.map((v,i)=>v==null?null:`${X(i)},${Y(v)}`).filter(Boolean).join(" ");g+=`<polyline points="${pts}" fill="none" stroke="${COLORS[k]}" stroke-width="${k===0?2.5:1.5}" opacity="${k===0?1:.85}"/>`;leg+=`<span style="color:${COLORS[k]}">━ ${WAVE_MODELS[k][1]}</span> &nbsp; `});
+  svg.innerHTML=g;document.getElementById("legend").innerHTML=leg+`<span style="color:#e74c3c">● tus observaciones (pasadas a mar abierto)</span>`;
+  // spread over next 24h
+  let sp=[];for(let i=ni;i<Math.min(N,ni+24);i++){const vals=DATA.waves.slice(1).filter(Boolean).map(w=>w.hourly.wave_height[i]).filter(v=>v!=null);if(vals.length>1)sp.push(Math.max(...vals)-Math.min(...vals))}
+  const ms=sp.length?Math.max(...sp):0;
+  document.getElementById("spread").innerHTML=sp.length?`Diferencia máxima entre modelos en las próximas 24 h: <b>${ms.toFixed(2)} m</b> → confianza <b>${ms<0.3?"alta":ms<0.6?"media":"baja"}</b>${ms>=0.6?" (los modelos no se ponen de acuerdo: mira la boya y el muelle)":""}.`:"";
+}
+function exposureNow(o){return o.exp||1}
+
+function addObs(){
+  if(!DATA)return;const h=parseFloat(document.getElementById("obsH").value);if(isNaN(h))return;
+  const r=nowRow();
+  const o={t:new Date().toISOString(),h,ok:parseFloat(document.getElementById("obsOk").value),note:document.getElementById("obsNote").value,model:dockHs(r),hs:r.hs,dir:r.dir,exp:exposure(r.swD??r.dir)};
+  const all=getObs();all.push(o);store("fs_obs",all.slice(-200));
+  document.getElementById("obsH").value="";document.getElementById("obsNote").value="";render();
+}
+function clearObs(){store("fs_obs",[]);render()}
+function renderObs(bf){
+  const obs=getObs();
+  document.getElementById("bias").innerHTML=bf.n<2?`Con ${bf.n} observación${bf.n===1?"":"es"} aún no se corrige el modelo (mínimo 2).`:`Con ${bf.n} observaciones, en el muelle hay de media <b>×${bf.f.toFixed(2)}</b> lo que estiman los modelos → ${bf.f>1.15?"los modelos se quedan cortos en Sant Elm":bf.f<0.85?"los modelos exageran en Sant Elm":"los modelos aciertan bastante"}.`;
+  document.getElementById("obsTable").innerHTML=obs.length?"<tr><th>Fecha</th><th>Real</th><th>Modelo</th><th>Embarque</th><th>Nota</th></tr>"+obs.slice(-8).reverse().map(o=>`<tr><td>${new Date(o.t).toLocaleString("es-ES",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td><td>${o.h.toFixed(1)} m</td><td>${o.model.toFixed(2)} m</td><td>${o.ok===1?"✅":o.ok===0?"⛔":"⚠️"}</td><td>${(o.note||"").replace(/</g,"&lt;")}</td></tr>`).join(""):"";
+}
+
+loadCfg();load();setInterval(load,15*60*1000);
+</script>
+</body>
+</html>

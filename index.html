@@ -15,7 +15,7 @@ main{padding:0 14px 40px;display:grid;gap:14px;grid-template-columns:repeat(auto
 .card{background:var(--card);border-radius:14px;padding:16px}
 .wide{grid-column:1/-1}
 .light{display:flex;gap:16px;align-items:center}
-.dot{width:86px;height:86px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.78rem;line-height:1.1;padding:4px;color:#003F69;text-align:center;letter-spacing:-.02em;overflow-wrap:anywhere}
+.dot{width:96px;height:96px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem;line-height:1.1;padding:4px;color:#003F69;text-align:center;letter-spacing:-.02em}
 .ok{background:var(--ok)}.warn{background:var(--warn)}.no{background:var(--no)}.na{background:#567}
 .reasons{margin:6px 0 0;padding-left:18px;color:var(--mut);font-size:.9rem}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.92rem}
@@ -341,7 +341,7 @@ function renderObs(bf){
 
 loadCfg();load();setInterval(load,15*60*1000);
 // Si la página va incrustada en firusub.com, avisa a la página madre de la altura para que el iframe se ajuste
-if(window.parent!==window){document.body.classList.add("embed");const _h=()=>{try{parent.postMessage({firusubMarH:document.documentElement.scrollHeight},"*")}catch(e){}};new ResizeObserver(_h).observe(document.body);setInterval(_h,2000)}
+if(window.parent!==window){document.body.classList.add("embed");const _h=()=>{try{parent.postMessage({firusubMarH:Math.ceil(document.querySelector("main").getBoundingClientRect().bottom+window.scrollY+16)},"*")}catch(e){}};new ResizeObserver(_h).observe(document.body);setInterval(_h,2000)}
 </script>
 </body>
 </html>

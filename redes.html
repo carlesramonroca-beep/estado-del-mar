@@ -3,90 +3,139 @@
 <head>
 <meta charset="utf-8">
 <title>Firusub · Imagen del parte para redes</title>
-<!-- Tarjeta 1080x1350 para redes sociales. Lee parte.json (o ?src=otro.json). La genera el parte automático con una captura. -->
+<!-- Tarjeta 1080x1350 para redes. Lee parte.json (o ?src=otro.json). Si existe fondo.jpg en el repo (foto propia de Sant Elm/Dragonera) la usa de fondo; si no, dibuja la escena. -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:1080px;height:1350px;overflow:hidden}
-body{font-family:Inter,"Inter Display",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#eef6fb;
-  background:radial-gradient(120% 70% at 80% 0%,#1d6f9a 0%,#0e3d5c 45%,#071c2b 100%)}
-.card{position:relative;width:1080px;height:1350px;padding:70px 72px 0;display:flex;flex-direction:column}
-.waves{position:absolute;left:0;right:0;bottom:0;height:300px;z-index:0}
-.top{display:flex;justify-content:space-between;align-items:flex-start;z-index:1}
-.brand{font-size:40px;font-weight:800;letter-spacing:-.5px}
-.brand small{display:block;font-size:24px;font-weight:500;color:#9cc7e0;letter-spacing:.5px;margin-top:4px}
-.date{text-align:right;font-size:26px;color:#9cc7e0;font-weight:500;line-height:1.35}
-.date b{display:block;color:#fff;font-size:34px;font-weight:700}
-h1{z-index:1;margin-top:54px;font-size:66px;line-height:1.08;font-weight:800;letter-spacing:-1.5px}
-.texto{z-index:1;margin-top:26px;font-size:31px;line-height:1.42;color:#d3e7f3;font-weight:400}
-.salidas{z-index:1;display:flex;gap:22px;margin-top:44px}
-.sal{flex:1;border-radius:28px;padding:26px 28px;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.12)}
-.sal .f{font-size:24px;color:#9cc7e0;font-weight:600;text-transform:uppercase;letter-spacing:1.5px}
-.sal .d{margin-top:10px;font-size:44px;font-weight:800;display:flex;align-items:center;gap:14px;letter-spacing:-.5px}
-.sal .d i{width:30px;height:30px;border-radius:50%;flex:none;box-shadow:0 0 24px currentColor}
-.ok{color:#36e08a}.warn{color:#ffc93c}.no{color:#ff5a4e}
-.ok i{background:#36e08a}.warn i{background:#ffc93c}.no i{background:#ff5a4e}
-.stats{z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}
-.st{background:rgba(0,0,0,.18);border-radius:22px;padding:20px 22px}
-.st .k{font-size:21px;color:#9cc7e0;font-weight:600;text-transform:uppercase;letter-spacing:1.2px}
-.st .v{font-size:31px;font-weight:700;margin-top:8px;line-height:1.2}
-.aviso{z-index:1;margin-top:26px;border-radius:22px;padding:20px 26px;font-size:26px;line-height:1.35;font-weight:600;display:flex;gap:16px;align-items:flex-start}
-.aviso.naranja{background:rgba(255,140,40,.2);border:2px solid #ff9a3c;color:#ffd2a6}
-.aviso.amarillo{background:rgba(255,201,60,.16);border:2px solid #ffc93c;color:#ffe9a8}
-.aviso.rojo{background:rgba(255,70,60,.22);border:2px solid #ff5a4e;color:#ffc2bd}
-.aviso.info{background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.14);color:#d3e7f3;font-weight:500}
-.aviso .ic{font-size:30px;line-height:1}
-.foot{position:absolute;left:72px;right:72px;bottom:52px;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;font-size:23px;color:#cfe6f3}
-.foot b{color:#fff;font-size:26px}
-.foot .url{text-align:right;color:#9cc7e0;white-space:nowrap;font-size:21px}
+html,body{width:1080px;height:1350px;overflow:hidden;background:#071c2b}
+body{font-family:Inter,"Inter Display",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}
+#scene,#photo{position:absolute;inset:0;width:1080px;height:1350px}
+#photo{background-size:cover;background-position:center;display:none}
+#shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,0) 52%,rgba(3,14,24,.75) 72%,rgba(3,14,24,.92) 100%)}
+.ui{position:absolute;inset:0;padding:64px 64px 0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;text-shadow:0 2px 12px rgba(0,0,0,.45)}
+.brand{font-size:44px;font-weight:900;letter-spacing:3px}
+.brand small{display:block;font-size:22px;font-weight:600;letter-spacing:6px;opacity:.85;margin-top:2px}
+.date{text-align:right;font-size:24px;font-weight:600;opacity:.95;line-height:1.3}
+.date b{display:block;font-size:34px;font-weight:800}
+.status{margin-top:120px;text-align:center}
+.status .when{font-size:30px;font-weight:700;letter-spacing:8px;text-transform:uppercase;text-shadow:0 2px 14px rgba(0,0,0,.5)}
+.pill{display:inline-flex;align-items:center;gap:22px;margin-top:16px;padding:22px 52px;border-radius:999px;font-size:84px;font-weight:900;letter-spacing:-1px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.pill i{width:40px;height:40px;border-radius:50%;background:#fff;opacity:.9}
+.ok{background:#1fbf6f}.warn{background:#f2b51d;color:#1b1400}.no{background:#e8443a}
+.warn i{background:#1b1400}
+.sub{margin-top:22px;font-size:32px;font-weight:600;text-shadow:0 2px 14px rgba(0,0,0,.6)}
+.panel{position:absolute;left:64px;right:64px;bottom:150px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.m{background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.16);border-radius:28px;padding:22px 24px 20px;backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:flex-start}
+.m .k{font-size:20px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:.8}
+.m .row{display:flex;align-items:center;gap:14px;margin-top:8px}
+.m .v{font-size:64px;font-weight:900;letter-spacing:-2px;line-height:1}
+.m .u{font-size:28px;font-weight:700;opacity:.85;margin-left:4px}
+.m .s{font-size:22px;font-weight:600;opacity:.8;margin-top:8px}
+.chips{display:flex;gap:16px;margin-top:22px}
+.chip{flex:1;display:flex;align-items:center;justify-content:center;gap:12px;border-radius:999px;padding:16px 10px;font-size:26px;font-weight:800;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.16)}
+.chip i{width:22px;height:22px;border-radius:50%}
+.chip.ok i{background:#36e08a}.chip.warn i{background:#ffc93c}.chip.no i{background:#ff5a4e}
+.chip.ok,.chip.warn,.chip.no{background:rgba(255,255,255,.1);color:#fff}
+.aviso{margin-top:18px;border-radius:22px;padding:16px 24px;font-size:25px;font-weight:700;display:flex;gap:14px;align-items:center}
+.aviso.naranja{background:#ff8a2a;color:#2a1200}.aviso.rojo{background:#e8443a}.aviso.amarillo{background:#ffc93c;color:#2a2000}
+.foot{position:absolute;left:64px;right:64px;bottom:52px;display:flex;justify-content:space-between;align-items:center;font-size:22px;font-weight:600;opacity:.92}
+.foot b{font-size:24px}
 </style>
 </head>
 <body>
-<div class="card" id="card">
-  <svg class="waves" viewBox="0 0 1080 300" preserveAspectRatio="none" aria-hidden="true">
-    <path d="M0 120 C 180 70 300 170 540 120 S 900 70 1080 120 V300 H0Z" fill="#2a8fc0" opacity=".18"/>
-    <path d="M0 170 C 200 120 340 220 560 170 S 920 120 1080 170 V300 H0Z" fill="#3fb0e0" opacity=".16"/>
-    <path d="M0 220 C 160 185 380 260 600 220 S 940 185 1080 220 V300 H0Z" fill="#061826" opacity=".7"/>
-  </svg>
+<svg id="scene" viewBox="0 0 1080 1350"></svg>
+<div id="photo"></div>
+<div id="shade"></div>
+<div class="ui">
   <div class="top">
-    <div class="brand">Firusub<small>Parte del mar · Sant Elm</small></div>
+    <div class="brand">FIRUSUB<small>SANT ELM · MALLORCA</small></div>
     <div class="date" id="fecha"></div>
   </div>
-  <h1 id="titulo"></h1>
-  <div class="texto" id="texto"></div>
-  <div class="salidas" id="salidas"></div>
-  <div class="stats" id="stats"></div>
-  <div id="avisos"></div>
-  <div class="foot"><div><b>Firusub</b><br>Centro de buceo · Sant Elm</div><div class="url">Parte en directo<br><span style="color:#fff;font-weight:600">carlesramonroca-beep.github.io/estado-del-mar</span></div></div>
+  <div class="status">
+    <div class="when" id="when"></div>
+    <div class="pill" id="pill"><i></i><span id="pilltxt"></span></div>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div class="panel">
+    <div class="metrics" id="metrics"></div>
+    <div class="chips" id="chips"></div>
+    <div id="aviso"></div>
+  </div>
+  <div class="foot"><div><b>Parte del mar</b> · Dragonera y Sant Elm</div><div>carlesramonroca-beep.github.io/estado-del-mar</div></div>
 </div>
 <script>
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const DIRS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const DN={N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180,SSW:202.5,SW:225,WSW:247.5,W:270,WNW:292.5,NW:315,NNW:337.5,NO:315,SO:225,O:270};
 function cls(d){d=String(d||"").toUpperCase();return d.includes("NO")?"no":d.includes("PREC")?"warn":"ok"}
 function lab(d){const c=cls(d);return c==="no"?"No salimos":c==="warn"?"Precaución":"Salimos"}
+function num(s){const m=String(s??"").replace(",",".").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null}
+function dirOf(s){if(s==null)return null;if(typeof s==="number")return s;const m=String(s).toUpperCase().match(/\b(NNE|ENE|ESE|SSE|SSW|WSW|WNW|NNW|NE|SE|SW|NW|SO|NO|N|E|S|W|O)\b/);return m?DN[m[1]]:null}
+function card(d){return d==null?"":DIRS[Math.round(((d%360)+360)%360/22.5)%16]}
+const fmt=(v,dec)=>v==null?"–":v.toFixed(dec).replace(".",",");
+function arrow(dir,col){ // flecha hacia donde VA el mar (viene de dir)
+  if(dir==null)return"";const r=(dir+180)%360;
+  return `<svg width="58" height="58" viewBox="-30 -30 60 60"><circle r="27" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.35)" stroke-width="2"/><g transform="rotate(${r})"><path d="M0 -20 L11 6 L3 3 L3 20 L-3 20 L-3 3 L-11 6Z" fill="${col}"/></g><text x="0" y="-31" font-size="0"></text></svg>`}
+
+function drawScene(H,lvl){
+  // H: altura de ola (m); lvl: ok/warn/no
+  const s=document.getElementById("scene");const W=1080,hz=640;
+  const sky=lvl==="no"?["#2b3a4a","#5b6b7a","#8d98a0"]:lvl==="warn"?["#2d5f86","#7aa6c4","#e9c48f"]:["#1d5f93","#5ea8d6","#f6d29a"];
+  const sea=lvl==="no"?["#2b4a5c","#0b2230"]:["#1c7fa8","#0a3550"];
+  let g=`<defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset=".7" stop-color="${sky[1]}"/><stop offset="1" stop-color="${sky[2]}"/></linearGradient>
+  <linearGradient id="se" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sea[0]}"/><stop offset="1" stop-color="${sea[1]}"/></linearGradient>
+  <linearGradient id="isl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d5a4f"/><stop offset="1" stop-color="#1f3530"/></linearGradient>
+  <radialGradient id="sun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6d8" stop-opacity=".95"/><stop offset="1" stop-color="#fff6d8" stop-opacity="0"/></radialGradient></defs>`;
+  g+=`<rect width="${W}" height="${hz}" fill="url(#sk)"/>`;
+  if(lvl!=="no")g+=`<circle cx="820" cy="${hz-150}" r="160" fill="url(#sun)"/>`;
+  else for(let i=0;i<6;i++)g+=`<ellipse cx="${120+i*170}" cy="${150+(i%2)*60}" rx="220" ry="60" fill="#3a4856" opacity=".55"/>`;
+  // Dragonera vista desde Sant Elm: isla larga y escarpada, acantilado al SW (izquierda) y cresta irregular con la cima hacia el centro-norte
+  {const pts=[];const prof=x=>{const t=(x-70)/980;const base=Math.sin(Math.PI*Math.min(1,Math.max(0,t)))**0.55*(1-0.35*t)*(t<0.5?0.75+t:1.25-0.25*t);const j=Math.sin(x*0.05)*6+Math.sin(x*0.13+1)*4+Math.sin(x*0.31)*2.5;return Math.max(0,base*150+(t>0.03&&t<0.97?j:0))};
+   for(let x=70;x<=1060;x+=6)pts.push(`${x},${(hz-prof(x)).toFixed(1)}`);
+   g+=`<path d="M60 ${hz} L${pts.join(" L")} L1080 ${hz} Z" fill="url(#isl)"/>`;
+   g+=`<path d="M60 ${hz} L${pts.join(" L")} L1080 ${hz}" fill="none" stroke="#6f8d7c" stroke-opacity=".35" stroke-width="2"/>`;
+   const fx=170,fy=hz-prof(170);g+=`<rect x="${fx-4}" y="${fy-26}" width="8" height="26" fill="#efe9da"/><circle cx="${fx}" cy="${fy-28}" r="6" fill="#ffe9a6" opacity=".9"/>`;}
+  // Es Pantaleu delante
+  g+=`<path d="M180 ${hz+40} C 210 ${hz+10} 260 ${hz+2} 300 ${hz+18} C 320 ${hz+26} 335 ${hz+38} 340 ${hz+48} Z" fill="#1f3530"/>`;
+  g+=`<rect y="${hz}" width="${W}" height="${1350-hz}" fill="url(#se)"/>`;
+  // oleaje: amplitud según altura de ola
+  const A=Math.max(3,Math.min(48,(H??0.5)*16)),rows=14,white=(H??0)>=1.2;
+  for(let r=0;r<rows;r++){const y=hz+30+r*r*3.6+r*14,a=A*(0.35+r/rows),L=90+r*28,ph=(r*53)%L;
+    let d=`M${-L+ph} ${y}`;for(let x=-L+ph;x<W+L;x+=L)d+=` q ${L/4} ${-a} ${L/2} 0 t ${L/2} 0`;
+    g+=`<path d="${d}" fill="none" stroke="${white?"#e8f6ff":"#bfe6f7"}" stroke-opacity="${(0.12+r/rows*0.35).toFixed(2)}" stroke-width="${(1.5+r*0.5).toFixed(1)}"/>`;
+    if(white&&r>3)for(let x=(r*97)%180;x<W;x+=180+r*7)g+=`<ellipse cx="${x}" cy="${y-a*0.6}" rx="${10+r*2}" ry="${2+r*0.4}" fill="#fff" opacity="${(0.25+r/rows*0.4).toFixed(2)}"/>`}
+  s.innerHTML=g;
+}
 async function render(){
   const q=new URLSearchParams(location.search);
   const p=await fetch((q.get("src")||"parte.json")+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.json());
-  const d=p.actualizado?new Date(p.actualizado):new Date();
-  const tz={timeZone:"Europe/Madrid"};
-  document.getElementById("fecha").innerHTML=`<b>${(t=>t[0].toUpperCase()+t.slice(1))(d.toLocaleDateString("es-ES",{...tz,weekday:"long",day:"numeric",month:"long"}))}</b>Actualizado ${d.toLocaleTimeString("es-ES",{...tz,hour:"2-digit",minute:"2-digit"})} h`;
-  document.getElementById("titulo").textContent=p.titulo||"Parte del mar";
-  document.getElementById("texto").textContent=p.texto||"";
+  const d=p.actualizado?new Date(p.actualizado):new Date(),tz={timeZone:"Europe/Madrid"};
+  const cap=t=>t[0].toUpperCase()+t.slice(1);
+  document.getElementById("fecha").innerHTML=`<b>${cap(d.toLocaleDateString("es-ES",{...tz,weekday:"long",day:"numeric"}))}</b>${cap(d.toLocaleDateString("es-ES",{...tz,month:"long"}))} · ${d.toLocaleTimeString("es-ES",{...tz,hour:"2-digit",minute:"2-digit"})} h`;
   const sal=Array.isArray(p.salidas)?p.salidas.slice(0,3):[];
-  document.getElementById("salidas").innerHTML=sal.map(s=>`<div class="sal"><div class="f">${esc(s.franja)}</div><div class="d ${cls(s.decision)}"><i></i>${esc(s.etiqueta||lab(s.decision))}</div></div>`).join("");
-  const st=[["Mar",p.ola],["Viento",p.viento],["Boya Dragonera",p.boya]].filter(x=>x[1]);
-  document.getElementById("stats").innerHTML=st.map(([k,v])=>`<div class="st"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`).join("");
-  document.getElementById("stats").style.gridTemplateColumns=`repeat(${Math.max(st.length,1)},1fr)`;
-  let av="";
-  if(p.avisos){const a=p.avisos.toLowerCase();const lvl=a.includes("rojo")?"rojo":a.includes("naranja")?"naranja":a.includes("amarillo")?"amarillo":"info";
-    av+=`<div class="aviso ${lvl}"><span class="ic">⚠️</span><span>${esc(p.aviso_corto||p.avisos)}</span></div>`}
-  if(p.rayos&&/tormenta|rayo/i.test(p.rayos)&&!/sin rayos|bajo/i.test(p.rayos))av+=`<div class="aviso amarillo"><span class="ic">⚡</span><span>${esc(p.rayos)}</span></div>`;
-  document.getElementById("avisos").innerHTML=av;
-  // ajusta el texto si no cabe
-  const card=document.getElementById("card"),tx=document.getElementById("texto"),h1=document.getElementById("titulo");
-  let fs=31,hs=66;const fits=()=>{const r=document.getElementById("avisos").getBoundingClientRect();return r.bottom<1350-150};
-  while(!fits()&&fs>22){fs-=1;tx.style.fontSize=fs+"px";if(hs>50){hs-=2;h1.style.fontSize=hs+"px"}}
+  const main=sal[0]||{franja:"Hoy",decision:p.estado==="mayor"?"PRECAUCION":"SALIR"};const lvl=cls(main.decision);
+  document.getElementById("when").textContent=main.franja;
+  const pill=document.getElementById("pill");pill.className="pill "+lvl;document.getElementById("pilltxt").textContent=main.etiqueta||lab(main.decision);
+  const sub=p.titulo_corto||(p.titulo&&p.titulo.length<=42?p.titulo:"");document.getElementById("sub").textContent=sub;
+  // métricas
+  const H=p.ola_m??num(p.ola),Hd=p.ola_dir??dirOf(p.ola),Ws=p.viento_kn??num(p.viento),Wd=p.viento_dir??dirOf(p.viento),G=p.rachas_kn??(()=>{const m=String(p.viento||"").match(/rachas?\D*(\d+)/i);return m?+m[1]:null})();
+  const B=num(p.boya),Bd=dirOf(p.boya),Bt=(()=>{const m=String(p.boya||"").replace(",",".").match(/(\d+(\.\d+)?)\s*s\b/);return m?parseFloat(m[1]):null})();
+  const tiles=[];
+  tiles.push({k:"Ola",v:fmt(H,1),u:"m",s:Hd!=null?"del "+card(Hd):"",a:arrow(Hd,"#7fd3ff")});
+  tiles.push({k:"Viento",v:Ws==null?"–":Math.round(Ws),u:"kn",s:[Wd!=null?"del "+card(Wd):"",G?"rachas "+G:""].filter(Boolean).join(" · "),a:arrow(Wd,"#ffd166")});
+  if(B!=null)tiles.push({k:"Boya Dragonera",v:fmt(B,1),u:"m",s:[Bd!=null?card(Bd):"",Bt?fmt(Bt,0)+" s":""].filter(Boolean).join(" · "),a:""});
+  document.getElementById("metrics").style.gridTemplateColumns=`repeat(${tiles.length},1fr)`;
+  document.getElementById("metrics").innerHTML=tiles.map(t=>`<div class="m"><div class="k">${t.k}</div><div class="row"><div class="v">${esc(t.v)}<span class="u">${t.u}</span></div>${t.a}</div><div class="s">${esc(t.s)}</div></div>`).join("");
+  document.getElementById("chips").innerHTML=sal.length>1?sal.map(s=>`<div class="chip ${cls(s.decision)}"><i></i>${esc(s.franja)}</div>`).join(""):"";
+  if(p.avisos){const a=p.avisos.toLowerCase();const l=a.includes("rojo")?"rojo":a.includes("naranja")?"naranja":a.includes("amarillo")?"amarillo":"";
+    if(l)document.getElementById("aviso").innerHTML=`<div class="aviso ${l}">⚠️ ${esc(p.aviso_corto||("Aviso "+l+" AEMET"))}</div>`}
+  // fondo: foto propia si existe, si no escena dibujada
+  drawScene(H,lvl);
+  const img=new Image();await new Promise(res=>{img.onload=()=>{const ph=document.getElementById("photo");ph.style.backgroundImage=`url(${img.src})`;ph.style.display="block";res()};img.onerror=res;img.src=(q.get("fondo")||"fondo.jpg")});
   document.body.dataset.ready="1";
 }
-render().catch(e=>{document.getElementById("titulo").textContent="Error: "+e.message;document.body.dataset.ready="1"});
+render().catch(e=>{document.getElementById("sub").textContent="Error: "+e.message;document.body.dataset.ready="1"});
 </script>
 </body>
 </html>

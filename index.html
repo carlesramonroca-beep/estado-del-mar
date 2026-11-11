@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://firusub.com/estado-del-mar/">
 <title>Firusub · Estado del mar Sant Elm</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#003F69;--card:#0b4f80;--ink:#F0F4F9;--mut:#a9c8de;--ok:#33C6AB;--warn:#f1c40f;--no:#e74c3c;--acc:#33C6AB} /* colores de firusub.com */
@@ -22,7 +24,7 @@ main{padding:0 14px 40px;display:grid;gap:14px;grid-template-columns:repeat(auto
 .kv span:nth-child(odd){color:var(--mut)}
 button,input,select{font:inherit}
 button{background:var(--acc);color:#003F69;font-weight:700;border:0;border-radius:64px;padding:8px 16px;cursor:pointer}
-button.sec{background:#1f6a9a;color:#F0F4F9} body.embed>header,body.embed .interno{display:none} body.embed main{padding-top:14px} .solo-pub,.solo-pub-block{display:none} body.embed .solo-pub{display:inline} body.embed .solo-pub-block{display:block} body.embed .solo-int{display:none}
+button.sec{background:#1f6a9a;color:#F0F4F9} body.embed>header,body.embed .interno{display:none} body.embed main{padding-top:14px} .solo-pub,.solo-pub-block{display:none} body.embed .solo-pub{display:inline} body.embed .solo-pub-block{display:block} body.embed .solo-int,body.embed .solo-int-block{display:none}
 input,select{background:#00335a;color:var(--ink);border:1px solid #2f77a6;border-radius:8px;padding:6px 8px;width:100%}
 label{font-size:.85rem;color:var(--mut);display:block;margin-top:8px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -37,6 +39,16 @@ th{color:var(--mut);font-weight:600}
 a{color:var(--acc)}
 #err{color:var(--no)}
 svg text{fill:var(--mut);font-size:10px}
+.dias{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.dia{border-radius:12px;padding:12px 14px;background:#00335a}
+.dia .q{font-size:.8rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.dia .v{font-weight:800;font-size:1.05rem;margin-top:4px}
+.dia.ok .v{color:var(--ok)}.dia.warn .v{color:var(--warn)}.dia.no .v{color:var(--no)}
+.dia .d{font-size:.8rem;color:var(--mut);margin-top:4px}
+.stale{opacity:.55}
+details.nav summary{cursor:pointer;color:var(--acc);font-weight:600;margin-top:12px}
+body.embed.sinparte #parteCard{display:none!important}
+body.embed .kv.solo-pub-block{display:grid}
 </style>
 </head>
 <body>
@@ -46,6 +58,12 @@ svg text{fill:var(--mut);font-size:10px}
 </header>
 <main>
 
+<section class="card wide solo-pub-block" id="diasCard">
+  <h2>¿Salimos?</h2>
+  <div class="dias" id="dias"></div>
+  <div class="small" style="margin-top:8px">Salidas a las 9:00 y a las 11:30 desde el muelle de Sant Elm. Previsión automática: la confirmamos cada mañana.</div>
+</section>
+
 <section class="card wide" id="parteCard" style="display:none">
   <h2><span class="solo-int">Parte de Claude · previsión contra realidad</span><span class="solo-pub">Parte del mar Firusub</span></h2>
   <div class="light"><div id="parteDot" class="dot na"></div><div><div id="parteTitle" style="font-weight:700"></div><div id="parteText" class="small" style="color:var(--ink);margin-top:4px"></div><div id="parteAvisos" class="small" style="color:var(--warn);margin-top:6px"></div><div id="parteMeta" class="small" style="margin-top:6px"></div></div></div>
@@ -54,11 +72,13 @@ svg text{fill:var(--mut);font-size:10px}
 <section class="card">
   <h2>Ahora</h2>
   <div class="light"><div id="nowDot" class="dot na">…</div><div><div id="nowTitle" style="font-weight:700"></div><ul id="nowReasons" class="reasons"></ul></div></div>
-  <div class="kv" id="nowKv" style="margin-top:12px"></div>
+  <div class="kv solo-int-block" id="nowKv" style="margin-top:12px"></div>
+  <div class="kv solo-pub-block" id="nowKvPub" style="margin-top:12px"></div>
+  <details class="nav solo-pub-block"><summary>Datos para navegantes</summary><div class="kv" id="nowKvNav" style="margin-top:8px"></div></details>
   <div id="err" class="small"></div>
 </section>
 
-<section class="card">
+<section class="card interno">
   <h2>Muelle y dirección del mar</h2>
   <svg id="rose" viewBox="-110 -110 220 220" width="100%" style="max-height:260px"></svg>
   <div class="small">Rojo = cuánto mar llega a la amarra según de dónde viene (más intenso, más expuesto). Verde = los dos lados de amarre. Flecha azul = mar de fondo, blanca = mar de viento, amarilla = viento. Las flechas apuntan hacia donde va el mar.</div>
@@ -135,7 +155,7 @@ svg text{fill:var(--mut);font-size:10px}
 <section class="card wide small interno">
   Predicciones: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (modelos de oleaje Météo-France MFWAM, ECMWF WAM y DWD GWAM; viento AROME/ARPEGE, ECMWF IFS e ICON). Esta herramienta ayuda a decidir; la decisión final es siempre del responsable de la embarcación.
 </section>
-<section class="card wide small solo-pub-block" style="opacity:.75">Datos: Open-Meteo (CC BY 4.0) · Puertos del Estado · AEMET. Parte orientativo: la decisión final de salir es siempre del patrón de Firusub.</section>
+<section class="card wide small solo-pub-block">Si cancelamos una salida por el estado del mar, eliges tú: otra fecha sin coste, un crédito para usar en un año o la devolución íntegra. <a href="https://firusub.com/politica-de-contratacion-y-reembolso/" target="_top">Ver condiciones</a>.<br><span style="opacity:.75">Datos: Open-Meteo (CC BY 4.0) · Puertos del Estado · AEMET.</span></section>
 </main>
 
 <script>
@@ -248,9 +268,10 @@ function renderParte(){
   const d=document.getElementById("parteDot");d.className="dot "+m[0];d.textContent=m[1];
   document.getElementById("parteTitle").textContent=PARTE.titulo||"";
   document.getElementById("parteText").textContent=PARTE.texto||"";
-  const t=PARTE.actualizado?new Date(PARTE.actualizado):null;const old=t&&(Date.now()-t)>12*3600e3;
+  const t=PARTE.actualizado?new Date(PARTE.actualizado):null;const hh=t?(Date.now()-t)/3600e3:0;const old=t&&hh>6;
+  c.classList.toggle("stale",!!old);if(old){d.className="dot na";d.textContent="PENDIENTE"}
   document.getElementById("parteAvisos").innerHTML=(PARTE.avisos?`⚠️ <b>Avisos AEMET:</b> ${String(PARTE.avisos).replace(/</g,"&lt;")}<br>`:"")+(PARTE.rayos?`⚡ <b>Rayos:</b> ${String(PARTE.rayos).replace(/</g,"&lt;")}`:"");
-  document.getElementById("parteMeta").innerHTML=(t?`Revisado ${t.toLocaleString("es-ES",{weekday:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}`:"")+(PARTE.boya?` · Boya Dragonera: ${PARTE.boya}`:"")+(PARTE.correccion?`<span class="solo-int"> · Corrección aplicada ×${Number(PARTE.correccion).toFixed(2)}</span>`:"")+(old?" · <b>parte antiguo, puede no estar al día</b>":"");
+  document.getElementById("parteMeta").innerHTML=(t?`<b>Actualizado ${hh<1?"hace menos de 1 h":"hace "+Math.round(hh)+" h"}</b> (${t.toLocaleString("es-ES",{weekday:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})})`:"")+(PARTE.boya?` · Boya Dragonera: ${PARTE.boya}`:"")+(PARTE.correccion?`<span class="solo-int"> · Corrección aplicada ×${Number(PARTE.correccion).toFixed(2)}</span>`:"")+(old?" · <b>parte pendiente de actualizar: mira la previsión automática</b>":"");
 }
 function render(){
   renderParte();
@@ -258,7 +279,9 @@ function render(){
   const w0=DATA.waves.find(x=>x);const now=nowRow();
   const ev=evaluate(now,bf.f);
   const dot=document.getElementById("nowDot");dot.className="dot "+CLS[ev.lvl];dot.textContent=LBL[ev.lvl];
-  document.getElementById("nowTitle").textContent=ev.lvl===0?"Condiciones dentro de tus límites":ev.lvl===1?"Valorar en el muelle antes de embarcar":"Fuera de límites: anular o retrasar";
+  const EMB=document.body.classList.contains("embed");
+  document.getElementById("nowTitle").textContent=EMB?(ev.lvl===0?"Ahora el mar está bien":ev.lvl===1?"Mar justo: lo valoramos en el muelle":"Ahora el mar no está para salir"):(ev.lvl===0?"Condiciones dentro de tus límites":ev.lvl===1?"Valorar en el muelle antes de embarcar":"Fuera de límites: anular o retrasar");
+  if(EMB){dot.textContent=["BIEN","JUSTO","MAL"][ev.lvl]}
   document.getElementById("nowReasons").innerHTML=(ev.reasons.length?ev.reasons:["Sin factores limitantes"]).map(r=>`<li>${r}</li>`).join("");
   const f=(v,d=1,u="")=>v==null?"–":v.toFixed(d)+u;
   document.getElementById("nowKv").innerHTML=[
@@ -271,6 +294,9 @@ function render(){
     ["Tormenta / rayos",stormTxt(now)],
     ["Mejor amarre",bestSide(now)||"indiferente"]
   ].map(([a,b])=>`<span>${a}</span><span>${b}</span>`).join("");
+  const tor=["Bajo","Medio","Alto"][stormLevel(now)];
+  document.getElementById("nowKvPub").innerHTML=[["Olas mar adentro",f(now.hs,1," m")],["Olas en el muelle",f(ev.dock,1," m")],["Viento",f(now.ws,0," nudos")+" ("+f(now.wg,0," en rachas)")],["Riesgo de tormenta",tor]].map(([a,b])=>`<span>${a}</span><span>${b}</span>`).join("");
+  document.getElementById("nowKvNav").innerHTML=document.getElementById("nowKv").innerHTML.replace(/<span class="solo-int">.*?<\/span>/g,"");
   drawRose(now);
   // timeline
   const [h0,h1]=(CFG.hours||"8-19").split("-").map(Number);
@@ -279,8 +305,24 @@ function render(){
     const day=hr===h0||i===ni;html+=`<div class="slot${day?" day":""}" data-k="${slots.length-1}">${day?d.toLocaleDateString("es-ES",{weekday:"short",day:"numeric"}):"&nbsp;"}<div class="b ${CLS[e.lvl]}"></div>${hr}h</div>`}
   const tl=document.getElementById("timeline");tl.innerHTML=html;
   tl.querySelectorAll(".slot").forEach(el=>{const s=slots[el.dataset.k];const show=()=>{document.getElementById("slotInfo").innerHTML=`<b>${new Date(s.r.t).toLocaleString("es-ES",{weekday:"long",hour:"2-digit",minute:"2-digit"})}</b> · ${LBL[s.e.lvl]} · Ola ${f(s.r.hs,1," m")} (${card(s.r.dir)}) · muelle ${f(s.e.dock,2," m")} · viento ${f(s.r.ws,0)}/${f(s.r.wg,0)} kn ${card(s.r.wd)}${s.e.reasons.length?" — "+s.e.reasons.join("; "):""}`};el.onmouseenter=show;el.onclick=show});
+  renderDias(bf);
   drawChart(ni);
   renderObs(bf);
+}
+
+function renderDias(bf){
+  const T=(DATA.waves.find(x=>x)).hourly.time;const now=new Date();const hoy=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const out=[];
+  for(let k=0;k<3;k++){const dia=new Date(hoy);dia.setDate(hoy.getDate()+k);
+    if(k===0&&now.getHours()>=13)continue; // las salidas de hoy ya han pasado
+    let lv=-1,why=[];
+    T.forEach((t,i)=>{const d=new Date(t);if(d.toDateString()!==dia.toDateString())return;const h=d.getHours();if(h<9||h>13)return;if(k===0&&d<now&&h<now.getHours())return;const e=evaluate(hourRow(i),bf.f);if(e.lvl>lv){lv=e.lvl;why=e.reasons}});
+    if(lv<0)continue;
+    const nom=k===0?"Hoy":k===1?"Mañana":dia.toLocaleDateString("es-ES",{weekday:"long"});
+    const v=["Salimos ✓","Justo: se decide en el muelle","No salimos ✗"][lv];
+    const d=lv===0?"Mar dentro de nuestros límites":why.slice(0,2).join(" · ");
+    out.push(`<div class="dia ${CLS[lv]}"><div class="q">${nom} · ${dia.toLocaleDateString("es-ES",{day:"numeric",month:"short"})}</div><div class="v">${v}</div><div class="d">${d}</div></div>`)}
+  document.getElementById("dias").innerHTML=out.join("")||'<div class="small">Sin datos de previsión ahora mismo.</div>';
 }
 
 function drawRose(n){
@@ -342,7 +384,7 @@ function renderObs(bf){
 
 loadCfg();load();setInterval(load,15*60*1000);
 // Si la página va incrustada en firusub.com, avisa a la página madre de la altura para que el iframe se ajuste
-if(window.parent!==window){document.body.classList.add("embed");const _h=()=>{try{parent.postMessage({firusubMarH:Math.ceil(document.querySelector("main").getBoundingClientRect().bottom+window.scrollY+16)},"*")}catch(e){}};new ResizeObserver(_h).observe(document.body);setInterval(_h,2000)}
+if(window.parent!==window){document.body.classList.add("embed");if(/[?&]sinparte=1/.test(location.search))document.body.classList.add("sinparte");const _h=()=>{try{parent.postMessage({firusubMarH:Math.ceil(document.querySelector("main").getBoundingClientRect().bottom+window.scrollY+16)},"*")}catch(e){}};new ResizeObserver(_h).observe(document.body);setInterval(_h,2000)}
 </script>
 </body>
 </html>

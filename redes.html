@@ -24,7 +24,7 @@ body{font-family:Inter,"Inter Display",system-ui,-apple-system,"Segoe UI",Roboto
 .ok{background:#1fbf6f}.warn{background:#f2b51d;color:#1b1400}.no{background:#e8443a}
 .warn i{background:#1b1400}
 .sub{margin-top:22px;font-size:32px;font-weight:600;text-shadow:0 2px 14px rgba(0,0,0,.6)}
-.panel{position:absolute;left:64px;right:64px;bottom:150px}
+.panel{position:absolute;left:64px;right:64px;bottom:160px}
 .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .m{background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.16);border-radius:28px;padding:22px 24px 20px;backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:flex-start}
 .m .k{font-size:20px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:.8}
@@ -39,8 +39,10 @@ body{font-family:Inter,"Inter Display",system-ui,-apple-system,"Segoe UI",Roboto
 .chip.ok,.chip.warn,.chip.no{background:rgba(255,255,255,.1);color:#fff}
 .aviso{margin-top:18px;border-radius:22px;padding:16px 24px;font-size:25px;font-weight:700;display:flex;gap:14px;align-items:center}
 .aviso.naranja{background:#ff8a2a;color:#2a1200}.aviso.rojo{background:#e8443a}.aviso.amarillo{background:#ffc93c;color:#2a2000}
-.foot{position:absolute;left:64px;right:64px;bottom:52px;display:flex;justify-content:space-between;align-items:center;font-size:22px;font-weight:600;opacity:.92}
-.foot b{font-size:24px}
+.foot{position:absolute;left:64px;right:64px;bottom:44px;display:flex;justify-content:space-between;align-items:flex-end;font-size:21px;font-weight:600;opacity:.92}
+.foot b{font-size:30px;font-weight:900}
+#lema{line-height:1.25}
+#lema span{display:block;font-size:22px}
 </style>
 </head>
 <body>
@@ -62,7 +64,7 @@ body{font-family:Inter,"Inter Display",system-ui,-apple-system,"Segoe UI",Roboto
     <div class="chips" id="chips"></div>
     <div id="aviso"></div>
   </div>
-  <div class="foot"><div><b>Parte del mar</b> · Dragonera y Sant Elm</div><div>carlesramonroca-beep.github.io/estado-del-mar</div></div>
+  <div class="foot"><div id="lema"></div><div style="text-align:right;opacity:.85">Parte del mar en directo<br>carlesramonroca-beep.github.io/estado-del-mar</div></div>
 </div>
 <script>
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -112,12 +114,17 @@ async function render(){
   const p=await fetch((q.get("src")||"parte.json")+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.json());
   const d=p.actualizado?new Date(p.actualizado):new Date(),tz={timeZone:"Europe/Madrid"};
   const cap=t=>t[0].toUpperCase()+t.slice(1);
-  document.getElementById("fecha").innerHTML=`<b>${cap(d.toLocaleDateString("es-ES",{...tz,weekday:"long",day:"numeric"}))}</b>${cap(d.toLocaleDateString("es-ES",{...tz,month:"long"}))} · ${d.toLocaleTimeString("es-ES",{...tz,hour:"2-digit",minute:"2-digit"})} h`;
+  if(p.para){const dp=new Date(p.para+"T12:00:00");document.getElementById("fecha").innerHTML=`<b>${cap(dp.toLocaleDateString("es-ES",{...tz,weekday:"long",day:"numeric"}))}</b>Previsión · ${dp.toLocaleDateString("es-ES",{...tz,month:"long"})}`}
+  else document.getElementById("fecha").innerHTML=`<b>${cap(d.toLocaleDateString("es-ES",{...tz,weekday:"long",day:"numeric"}))}</b>${cap(d.toLocaleDateString("es-ES",{...tz,month:"long"}))} · ${d.toLocaleTimeString("es-ES",{...tz,hour:"2-digit",minute:"2-digit"})} h`;
   const sal=Array.isArray(p.salidas)?p.salidas.slice(0,3):[];
-  const main=sal[0]||{franja:"Hoy",decision:p.estado==="mayor"?"PRECAUCION":"SALIR"};const lvl=cls(main.decision);
+  let main=sal[0]||{franja:"Hoy",decision:p.estado==="mayor"?"PRECAUCION":"SALIR"};
+  if(p.dia)main={franja:p.dia,decision:p.decision_dia||(sal.some(x=>cls(x.decision)==="ok")?"SALIR":sal.some(x=>cls(x.decision)==="warn")?"PRECAUCION":"NO SALIR"),etiqueta:p.etiqueta_dia};
+  const lvl=cls(main.decision);
   document.getElementById("when").textContent=main.franja;
   const pill=document.getElementById("pill");pill.className="pill "+lvl;document.getElementById("pilltxt").textContent=main.etiqueta||lab(main.decision);
-  const sub=p.titulo_corto||(p.titulo&&p.titulo.length<=42?p.titulo:"");document.getElementById("sub").textContent=sub;
+  const sub=p.broma||p.titulo_corto||(p.titulo&&p.titulo.length<=42?p.titulo:"");document.getElementById("sub").textContent=sub;
+  // lema de la casa, con su coña según el día
+  document.getElementById("lema").innerHTML=lvl==="no"?`<b>#FirusubSempreSurt</b><span style="opacity:.75">*quasi sempre</span>`:lvl==="warn"?`<b>#FirusubSempreSurt</b><span style="opacity:.75">amb compte</span>`:`<b>#FirusubSempreSurt</b><span style="opacity:.75">i avui també ✔</span>`;
   // métricas
   const H=p.ola_m??num(p.ola),Hd=p.ola_dir??dirOf(p.ola),Ws=p.viento_kn??num(p.viento),Wd=p.viento_dir??dirOf(p.viento),G=p.rachas_kn??(()=>{const m=String(p.viento||"").match(/rachas?\D*(\d+)/i);return m?+m[1]:null})();
   const B=num(p.boya),Bd=dirOf(p.boya),Bt=(()=>{const m=String(p.boya||"").replace(",",".").match(/(\d+(\.\d+)?)\s*s\b/);return m?parseFloat(m[1]):null})();
@@ -125,6 +132,8 @@ async function render(){
   tiles.push({k:"Ola",v:fmt(H,1),u:"m",s:Hd!=null?"del "+card(Hd):"",a:arrow(Hd,"#7fd3ff")});
   tiles.push({k:"Viento",v:Ws==null?"–":Math.round(Ws),u:"kn",s:[Wd!=null?"del "+card(Wd):"",G?"rachas "+G:""].filter(Boolean).join(" · "),a:arrow(Wd,"#ffd166")});
   if(B!=null)tiles.push({k:"Boya Dragonera",v:fmt(B,1),u:"m",s:[Bd!=null?card(Bd):"",Bt?fmt(Bt,0)+" s":""].filter(Boolean).join(" · "),a:""});
+  else if(G!=null)tiles.push({k:"Rachas",v:Math.round(G),u:"kn",s:p.rachas_txt||"máximas",a:""});
+  if(B==null&&G!=null)tiles[1].s=Wd!=null?"del "+card(Wd):"";
   document.getElementById("metrics").style.gridTemplateColumns=`repeat(${tiles.length},1fr)`;
   document.getElementById("metrics").innerHTML=tiles.map(t=>`<div class="m"><div class="k">${t.k}</div><div class="row"><div class="v">${esc(t.v)}<span class="u">${t.u}</span></div>${t.a}</div><div class="s">${esc(t.s)}</div></div>`).join("");
   document.getElementById("chips").innerHTML=sal.length>1?sal.map(s=>`<div class="chip ${cls(s.decision)}"><i></i>${esc(s.franja)}</div>`).join(""):"";

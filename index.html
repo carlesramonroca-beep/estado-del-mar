@@ -288,9 +288,14 @@ function drawRose(n){
   // sector (bearing FROM) drawn on the side waves come from
   const P=(a,r)=>[Math.sin(a*Math.PI/180)*r,-Math.cos(a*Math.PI/180)*r];
   facArr().forEach((v,i)=>{const c=i*22.5,[x1,y1]=P(c-11.25,95),[x2,y2]=P(c+11.25,95);g+=`<path d="M0 0 L${x1} ${y1} A95 95 0 0 1 ${x2} ${y2} Z" fill="rgba(231,76,60,${(0.55*v).toFixed(2)})" stroke="#1f405e"/>`});
-  SIDES.forEach(sd=>{const [x,y]=P(sd.n,22);g+=`<line x1="${-y*0.8}" y1="${x*0.8}" x2="${y*0.8}" y2="${-x*0.8}" stroke="#2ecc71" stroke-width="4" transform="translate(${x*0.35} ${y*0.35})"/>`});
+  // Forma real del muelle (norte arriba): tierra al N y al W; lado recto E-W en el N de la dársena (da al S) y lado diagonal saliendo hacia el SSW desde su extremo W (da al ESE)
+  {const C=[-25,8],[dx,dy]=P(SIDES[0].n+90,50),D=[C[0]+dx,C[1]+dy],E=[40,8];
+   g+=`<polygon points="${E[0]},${E[1]} ${C[0]},${C[1]} ${D[0]},${D[1]} ${D[0]-25},${D[1]} -85,-25 ${E[0]},-25" fill="#8a6d4a" opacity=".45"/>`;
+   g+=`<line x1="${C[0]}" y1="${C[1]}" x2="${E[0]}" y2="${E[1]}" stroke="#2ecc71" stroke-width="4" stroke-linecap="round"/>`;
+   g+=`<line x1="${C[0]}" y1="${C[1]}" x2="${D[0]}" y2="${D[1]}" stroke="#2ecc71" stroke-width="4" stroke-linecap="round"/>`;
+   g+=`<text x="-48" y="-8" text-anchor="middle" style="font-size:8px">tierra</text>`;}
   ["N","E","S","W"].forEach((t,i)=>{const [x,y]=P(i*90,104);g+=`<text x="${x}" y="${y+3}" text-anchor="middle">${t}</text>`});
-  g+=`<text x="0" y="40" text-anchor="middle">muelle</text>`;
+  g+=`<text x="10" y="30" text-anchor="middle">amarre</text>`;
   const arrow=(dir,len,col,w)=>{if(dir==null)return"";const [sx,sy]=P(dir,90);const [ex,ey]=P(dir,90-len);
     return `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="${col}" stroke-width="${w}" marker-end="url(#m${col.slice(1)})"/>`};
   let defs="<defs>";["3fa9f5","ffffff","f1c40f"].forEach(c=>defs+=`<marker id="m${c}" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#${c}"/></marker>`);defs+="</defs>";

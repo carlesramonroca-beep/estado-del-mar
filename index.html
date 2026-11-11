@@ -15,23 +15,23 @@ main{padding:0 14px 40px;display:grid;gap:14px;grid-template-columns:repeat(auto
 .card{background:var(--card);border-radius:14px;padding:16px}
 .wide{grid-column:1/-1}
 .light{display:flex;gap:16px;align-items:center}
-.dot{width:86px;height:86px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.95rem;color:#0b1f2e;text-align:center}
+.dot{width:86px;height:86px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.78rem;line-height:1.1;padding:4px;color:#003F69;text-align:center;letter-spacing:-.02em;overflow-wrap:anywhere}
 .ok{background:var(--ok)}.warn{background:var(--warn)}.no{background:var(--no)}.na{background:#567}
 .reasons{margin:6px 0 0;padding-left:18px;color:var(--mut);font-size:.9rem}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.92rem}
 .kv span:nth-child(odd){color:var(--mut)}
 button,input,select{font:inherit}
 button{background:var(--acc);color:#003F69;font-weight:700;border:0;border-radius:64px;padding:8px 16px;cursor:pointer}
-button.sec{background:#2a4d6b}
-input,select{background:#0b1f2e;color:var(--ink);border:1px solid #2a4d6b;border-radius:8px;padding:6px 8px;width:100%}
+button.sec{background:#1f6a9a;color:#F0F4F9} body.embed>header,body.embed .interno{display:none} body.embed main{padding-top:14px}
+input,select{background:#00335a;color:var(--ink);border:1px solid #2f77a6;border-radius:8px;padding:6px 8px;width:100%}
 label{font-size:.85rem;color:var(--mut);display:block;margin-top:8px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .timeline{display:flex;overflow-x:auto;gap:3px;padding-bottom:6px}
 .slot{min-width:34px;text-align:center;font-size:.72rem;color:var(--mut)}
 .slot .b{height:28px;border-radius:5px;margin:3px 0}
-.slot.day{border-left:2px solid #456;padding-left:2px}
+.slot.day{border-left:2px solid #3a7aa8;padding-left:2px}
 table{width:100%;border-collapse:collapse;font-size:.85rem}
-td,th{padding:4px 6px;border-bottom:1px solid #1f405e;text-align:left}
+td,th{padding:4px 6px;border-bottom:1px solid #2c6a96;text-align:left}
 th{color:var(--mut);font-weight:600}
 .small{font-size:.8rem;color:var(--mut)}
 a{color:var(--acc)}
@@ -78,7 +78,7 @@ svg text{fill:var(--mut);font-size:10px}
   <div id="spread" class="small" style="margin-top:6px"></div>
 </section>
 
-<section class="card">
+<section class="card interno">
   <h2>Lo que hay realmente</h2>
   <p class="small">Anota lo que ves en el muelle. La app compara tu dato con lo que decían los modelos a esa hora y corrige la predicción. Cuanto más anotes, mejor se ajusta a Sant Elm.</p>
   <div class="row">
@@ -102,7 +102,7 @@ svg text{fill:var(--mut);font-size:10px}
   </ul>
 </section>
 
-<section class="card">
+<section class="card interno">
   <h2>Ajustes del muelle y límites</h2>
   <label>Cuánto mar llega a la amarra según de dónde viene (0 = nada, 1 = todo), en orden N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW</label><input id="fac">
   <div class="row">
@@ -284,10 +284,10 @@ function render(){
 
 function drawRose(n){
   const s=document.getElementById("rose");let g="";
-  g+=`<circle r="95" fill="none" stroke="#2a4d6b"/><circle r="60" fill="none" stroke="#1f405e"/>`;
+  g+=`<circle r="95" fill="none" stroke="#3a7aa8"/><circle r="60" fill="none" stroke="#2c6a96"/>`;
   // sector (bearing FROM) drawn on the side waves come from
   const P=(a,r)=>[Math.sin(a*Math.PI/180)*r,-Math.cos(a*Math.PI/180)*r];
-  facArr().forEach((v,i)=>{const c=i*22.5,[x1,y1]=P(c-11.25,95),[x2,y2]=P(c+11.25,95);g+=`<path d="M0 0 L${x1} ${y1} A95 95 0 0 1 ${x2} ${y2} Z" fill="rgba(231,76,60,${(0.55*v).toFixed(2)})" stroke="#1f405e"/>`});
+  facArr().forEach((v,i)=>{const c=i*22.5,[x1,y1]=P(c-11.25,95),[x2,y2]=P(c+11.25,95);g+=`<path d="M0 0 L${x1} ${y1} A95 95 0 0 1 ${x2} ${y2} Z" fill="rgba(231,76,60,${(0.55*v).toFixed(2)})" stroke="#2c6a96"/>`});
   // Forma real del muelle (norte arriba): tierra al N y al W; lado recto E-W en el N de la dársena (da al S) y lado diagonal saliendo hacia el SSW desde su extremo W (da al ESE)
   {const C=[-25,8],[dx,dy]=P(SIDES[0].n+90,50),D=[C[0]+dx,C[1]+dy],E=[40,8];
    g+=`<polygon points="${E[0]},${E[1]} ${C[0]},${C[1]} ${D[0]},${D[1]} ${D[0]-25},${D[1]} -85,-25 ${E[0]},-25" fill="#8a6d4a" opacity=".45"/>`;
@@ -309,9 +309,9 @@ function drawChart(ni){
   let max=0.5;DATA.waves.forEach(w=>{if(w)w.hourly.wave_height.forEach(v=>{if(v!=null&&v>max)max=v})});max=Math.ceil(max*2)/2;
   const X=i=>pl+(W-pl-6)*i/(N-1),Y=v=>pt+(H-pt-pb)*(1-v/max);
   let g="";
-  for(let v=0;v<=max;v+=0.5)g+=`<line x1="${pl}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="#1f405e"/><text x="${pl-4}" y="${Y(v)+3}" text-anchor="end">${v}</text>`;
+  for(let v=0;v<=max;v+=0.5)g+=`<line x1="${pl}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="#2c6a96"/><text x="${pl-4}" y="${Y(v)+3}" text-anchor="end">${v}</text>`;
   g+=`<line x1="${pl}" x2="${W}" y1="${Y(CFG.tNavW)}" y2="${Y(CFG.tNavW)}" stroke="#f1c40f" stroke-dasharray="4 4" opacity=".6"/>`;
-  T.forEach((t,i)=>{const d=new Date(t);if(d.getHours()===0)g+=`<line x1="${X(i)}" x2="${X(i)}" y1="${pt}" y2="${H-pb}" stroke="#2a4d6b"/><text x="${X(i)+3}" y="${H-8}">${d.toLocaleDateString("es-ES",{weekday:"short",day:"numeric"})}</text>`});
+  T.forEach((t,i)=>{const d=new Date(t);if(d.getHours()===0)g+=`<line x1="${X(i)}" x2="${X(i)}" y1="${pt}" y2="${H-pb}" stroke="#3a7aa8"/><text x="${X(i)+3}" y="${H-8}">${d.toLocaleDateString("es-ES",{weekday:"short",day:"numeric"})}</text>`});
   g+=`<line x1="${X(ni)}" x2="${X(ni)}" y1="${pt}" y2="${H-pb}" stroke="#e74c3c"/><text x="${X(ni)+3}" y="${pt+10}" fill="#e74c3c">ahora</text>`;
   // observations
   getObs().forEach(o=>{const idx=T.findIndex(t=>Math.abs(new Date(t)-new Date(o.t))<1800e3);if(idx>=0)g+=`<circle cx="${X(idx)}" cy="${Y(o.h/Math.max(exposureNow(o),0.05))}" r="4" fill="#e74c3c"><title>Observado</title></circle>`});
@@ -341,7 +341,7 @@ function renderObs(bf){
 
 loadCfg();load();setInterval(load,15*60*1000);
 // Si la página va incrustada en firusub.com, avisa a la página madre de la altura para que el iframe se ajuste
-if(window.parent!==window){const _h=()=>{try{parent.postMessage({firusubMarH:document.documentElement.scrollHeight},"*")}catch(e){}};new ResizeObserver(_h).observe(document.body);setInterval(_h,2000)}
+if(window.parent!==window){document.body.classList.add("embed");const _h=()=>{try{parent.postMessage({firusubMarH:document.documentElement.scrollHeight},"*")}catch(e){}};new ResizeObserver(_h).observe(document.body);setInterval(_h,2000)}
 </script>
 </body>
 </html>

@@ -264,7 +264,7 @@ function nowRow(){
 }
 function renderParte(){
   const c=document.getElementById("parteCard");if(!PARTE){c.style.display="none";return}
-  c.style.display="";const m={cumple:["ok","SE CUMPLE"],menor:["ok","HAY MENOS"],mayor:["no","HAY MÁS"]}[PARTE.estado]||["na","—"];
+  c.style.display="";const m={cumple:["ok","IGUAL QUE LA PREVISIÓN"],menor:["ok","MEJOR QUE LA PREVISIÓN"],mayor:["no","PEOR QUE LA PREVISIÓN"]}[PARTE.estado]||["na","—"];
   const d=document.getElementById("parteDot");d.className="dot "+m[0];d.textContent=m[1];
   document.getElementById("parteTitle").textContent=PARTE.titulo||"";
   document.getElementById("parteText").textContent=PARTE.texto||"";

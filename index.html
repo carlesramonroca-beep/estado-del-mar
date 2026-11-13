@@ -91,6 +91,19 @@ body.embed .kv.solo-pub-block{display:grid}
   <div id="slotInfo" class="small" style="margin-top:8px;color:var(--ink)"></div>
 </section>
 
+<section class="card wide" id="evoCard">
+  <h2>Evolución del mar y del viento</h2>
+  <div class="evo-wrap" style="position:relative">
+    <div class="small" style="font-weight:600;color:var(--ink)">Olas (m)</div>
+    <svg id="evoOla" viewBox="0 0 900 200" width="100%" style="display:block;height:190px"></svg>
+    <div class="small" style="font-weight:600;color:var(--ink);margin-top:10px">Viento (nudos)</div>
+    <svg id="evoViento" viewBox="0 0 900 200" width="100%" style="display:block;height:190px"></svg>
+    <div id="evoTip" class="small" style="position:absolute;top:0;left:0;display:none;pointer-events:none;background:rgba(0,30,50,.92);color:var(--ink);border:1px solid #2b6f9e;border-radius:8px;padding:6px 9px;white-space:nowrap;z-index:5"></div>
+  </div>
+  <div id="evoLeg" class="small" style="margin-top:8px"></div>
+  <div class="small" style="margin-top:4px">Último día y próximos días. Toca o pasa el ratón por la gráfica para ver cada hora.</div>
+</section>
+
 <section class="card wide interno">
   <h2>Altura de ola: modelos comparados</h2>
   <svg id="chart" viewBox="0 0 900 220" width="100%"></svg>
@@ -273,6 +286,43 @@ function renderParte(){
   document.getElementById("parteAvisos").innerHTML=(PARTE.avisos?`⚠️ <b>Avisos AEMET:</b> ${String(PARTE.avisos).replace(/</g,"&lt;")}<br>`:"")+(PARTE.rayos?`⚡ <b>Rayos:</b> ${String(PARTE.rayos).replace(/</g,"&lt;")}`:"");
   document.getElementById("parteMeta").innerHTML=(t?`<b>Actualizado ${hh<1?"hace menos de 1 h":"hace "+Math.round(hh)+" h"}</b> (${t.toLocaleString("es-ES",{weekday:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})})`:"")+(PARTE.boya?` · Boya Dragonera: ${PARTE.boya}`:"")+(PARTE.correccion?`<span class="solo-int"> · Corrección aplicada ×${Number(PARTE.correccion).toFixed(2)}</span>`:"")+(old?" · <b>parte pendiente de actualizar: mira la previsión automática</b>":"");
 }
+
+function drawEvo(ni,bf){
+  const w0=DATA.waves.find(x=>x);if(!w0)return;const T=w0.hourly.time,N=T.length;
+  const rows=T.map((t,i)=>{const r=hourRow(i);const e=evaluate(r,bf.f);return {t,hs:r.hs,dir:r.dir,dock:e.dock,ws:r.ws,wg:r.wg,wd:r.wd,lvl:e.lvl}});
+  const _sv=document.getElementById("evoOla");const W=Math.max(300,Math.round(_sv.getBoundingClientRect().width||900)),H=190,pl=30,pr=6,pt=8,pb=20;const X=i=>pl+(W-pl-pr)*i/(N-1);
+  const css=getComputedStyle(document.body),C=k=>css.getPropertyValue(k).trim();
+  const ok=C('--ok')||'#33C6AB',warn=C('--warn')||'#f1c40f',no=C('--no')||'#e74c3c',mut=C('--mut')||'#a9c8de';
+  function panel(id,series,thr,unit){
+    let max=0;series.forEach(s=>rows.forEach(r=>{const v=r[s.k];if(v!=null&&v>max)max=v}));thr.forEach(t=>{if(t.v>max)max=t.v});
+    const step=unit==="kn"?(max>40?10:5):(max>3?1:0.5);max=Math.ceil((max*1.08)/step)*step||step;
+    const Y=v=>pt+(H-pt-pb)*(1-v/max);let g="";
+    // fondo por franjas (estado de salida)
+    rows.forEach((r,i)=>{if(i===N-1)return;const c=[ok,warn,no][r.lvl];g+=`<rect x="${X(i)}" y="${H-pb+3}" width="${X(i+1)-X(i)+0.5}" height="5" fill="${c}" opacity=".85"/>`});
+    for(let v=0;v<=max+1e-9;v+=step)g+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="#ffffff" stroke-opacity=".08"/><text x="${pl-5}" y="${Y(v)+3}" text-anchor="end" font-size="11" fill="${mut}">${unit==="kn"?v:v.toFixed(step<1?1:0)}</text>`;
+    T.forEach((t,i)=>{const d=new Date(t);if(d.getHours()===0){g+=`<line x1="${X(i)}" x2="${X(i)}" y1="${pt}" y2="${H-pb}" stroke="#ffffff" stroke-opacity=".18"/>`;g+=`<text x="${X(i)+4}" y="${H-pb-4}" font-size="11" fill="${mut}">${d.toLocaleDateString("es-ES",{weekday:"short",day:"numeric"})}</text>`}});
+    thr.forEach(t=>{g+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(t.v)}" y2="${Y(t.v)}" stroke="${t.c}" stroke-dasharray="5 4" stroke-opacity=".8"/><text x="${W-pr-2}" y="${Y(t.v)-3}" text-anchor="end" font-size="10" fill="${t.c}">${t.l}</text>`});
+    series.forEach(s=>{const pts=rows.map((r,i)=>r[s.k]==null?null:[X(i),Y(r[s.k])]).filter(Boolean);if(!pts.length)return;
+      const line=pts.map(p=>p.join(",")).join(" ");
+      if(s.fill)g+=`<polygon points="${pts[0][0]},${Y(0)} ${line} ${pts[pts.length-1][0]},${Y(0)}" fill="${s.c}" fill-opacity="${s.fill}"/>`;
+      g+=`<polyline points="${line}" fill="none" stroke="${s.c}" stroke-width="${s.w||2}" ${s.dash?'stroke-dasharray="'+s.dash+'"':''} stroke-linejoin="round"/>`});
+    g+=`<line x1="${X(ni)}" x2="${X(ni)}" y1="${pt}" y2="${H-pb}" stroke="#ffffff" stroke-width="1.5"/><text x="${X(ni)+4}" y="${pt+10}" font-size="11" fill="#ffffff">ahora</text>`;
+    g+=`<line class="cur" x1="0" x2="0" y1="${pt}" y2="${H-pb}" stroke="#ffffff" stroke-opacity=".6" style="display:none"/>`;
+    const svg=document.getElementById(id);svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.innerHTML=g;return svg;
+  }
+  const EMB=document.body.classList.contains("embed");
+  const sOla=panel("evoOla",[{k:"hs",c:"#6cc4ff",fill:.18,w:2.2},{k:"dock",c:"#ffffff",dash:"6 4",w:2}],[{v:CFG.tEmbN,c:no,l:"muelle: no embarcar"},{v:CFG.tNavN,c:warn,l:"mar abierto: no salir"}],"m");
+  const sVie=panel("evoViento",[{k:"wg",c:"#f1c40f",fill:.12,w:1.5},{k:"ws",c:"#33C6AB",w:2.4}],[{v:CFG.tWindN,c:no,l:"viento: no salir"}],"kn");
+  document.getElementById("evoLeg").innerHTML=`<span style="color:#6cc4ff">━ olas mar adentro</span> &nbsp; <span style="color:#fff">┅ olas en el muelle (estimadas)</span> &nbsp; <span style="color:#33C6AB">━ viento medio</span> &nbsp; <span style="color:#f1c40f">━ rachas</span> &nbsp; <span>barra inferior: <b style="color:${ok}">salir</b> / <b style="color:${warn}">precaución</b> / <b style="color:${no}">no salir</b></span>`;
+  const tip=document.getElementById("evoTip"),wrap=tip.parentElement;const f=(v,d=1)=>v==null?"–":v.toFixed(d);
+  function move(ev){const svg=ev.currentTarget,rc=svg.getBoundingClientRect();const cx=(ev.touches?ev.touches[0].clientX:ev.clientX);
+    const x=(cx-rc.left)/rc.width*W;let i=Math.round((x-pl)/(W-pl-pr)*(N-1));i=Math.max(0,Math.min(N-1,i));const r=rows[i];
+    [sOla,sVie].forEach(s=>{const l=s.querySelector(".cur");l.setAttribute("x1",X(i));l.setAttribute("x2",X(i));l.style.display=""});
+    tip.innerHTML=`<b>${new Date(r.t).toLocaleString("es-ES",{weekday:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</b> · ${[EMB?"bien":"salir",EMB?"justo":"precaución",EMB?"mal":"no salir"][r.lvl]}<br>Olas ${f(r.hs)} m (${card(r.dir)}) · muelle ${f(r.dock)} m<br>Viento ${f(r.ws,0)} kn (${card(r.wd)}) · rachas ${f(r.wg,0)} kn`;
+    tip.style.display="block";const wr=wrap.getBoundingClientRect();let left=cx-wr.left+12;if(left+tip.offsetWidth>wr.width)left=cx-wr.left-tip.offsetWidth-12;tip.style.left=Math.max(0,left)+"px";tip.style.top=(rc.top-wr.top+6)+"px"}
+  function out(){tip.style.display="none";[sOla,sVie].forEach(s=>{const l=s.querySelector(".cur");if(l)l.style.display="none"})}
+  [sOla,sVie].forEach(s=>{s.onmousemove=move;s.ontouchstart=move;s.ontouchmove=move;s.onmouseleave=out;s.ontouchend=()=>setTimeout(out,2500)});
+}
 function render(){
   renderParte();
   const bf=biasFactor();const ni=nowIndex();
@@ -306,6 +356,8 @@ function render(){
   const tl=document.getElementById("timeline");tl.innerHTML=html;
   tl.querySelectorAll(".slot").forEach(el=>{const s=slots[el.dataset.k];const show=()=>{document.getElementById("slotInfo").innerHTML=`<b>${new Date(s.r.t).toLocaleString("es-ES",{weekday:"long",hour:"2-digit",minute:"2-digit"})}</b> · ${LBL[s.e.lvl]} · Ola ${f(s.r.hs,1," m")} (${card(s.r.dir)}) · muelle ${f(s.e.dock,2," m")} · viento ${f(s.r.ws,0)}/${f(s.r.wg,0)} kn ${card(s.r.wd)}${s.e.reasons.length?" — "+s.e.reasons.join("; "):""}`};el.onmouseenter=show;el.onclick=show});
   renderDias(bf);
+  try{drawEvo(ni,bf)}catch(e){console.error(e)}
+  if(!window._evoRs){window._evoRs=1;let tm;window.addEventListener("resize",()=>{clearTimeout(tm);tm=setTimeout(()=>{try{drawEvo(nowIndex(),biasFactor())}catch(e){}},200)})}
   drawChart(ni);
   renderObs(bf);
 }

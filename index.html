@@ -13,7 +13,8 @@ body{margin:0;font-family:"Plus Jakarta Sans",system-ui,-apple-system,Segoe UI,R
 header{padding:16px 18px 8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 h1{font-size:1.25rem;margin:0}
 h2{font-size:1rem;margin:0 0 10px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-main{padding:0 14px 40px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));max-width:1200px;margin:0 auto}
+main{padding:0 14px 40px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));max-width:1200px;margin:0 auto}
+main>*{min-width:0}
 .card{background:var(--card);border-radius:14px;padding:16px}
 .wide{grid-column:1/-1}
 .light{display:flex;gap:16px;align-items:center}
@@ -49,6 +50,21 @@ svg text{fill:var(--mut);font-size:10px}
 details.nav summary{cursor:pointer;color:var(--acc);font-weight:600;margin-top:12px}
 body.embed.sinparte #parteCard{display:none!important}
 body.embed .kv.solo-pub-block{display:grid}
+.wx{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.wx .w{background:#00335a;border-radius:12px;padding:10px 8px;text-align:center;min-width:0}
+.wx .w svg{display:block;margin:0 auto 2px}
+.wx .k{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.wx .v{font-weight:800;font-size:1.15rem;overflow-wrap:anywhere}
+.wx .v.t{font-size:.85rem;line-height:1.2}
+.dia .tw{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--ink);margin-top:6px}
+@media (max-width:480px){
+ main{padding:0 8px 32px;gap:10px} header{padding:12px 10px 6px}
+ .card{padding:12px}
+ .light{flex-direction:column;align-items:flex-start;gap:10px}
+ .dot{width:74px;height:74px;font-size:.62rem}
+ .kv{grid-template-columns:minmax(0,auto) minmax(0,1fr);overflow-wrap:anywhere}
+ #parteAvisos,#parteText,#parteMeta{overflow-wrap:anywhere}
+}
 </style>
 </head>
 <body>
@@ -59,9 +75,9 @@ body.embed .kv.solo-pub-block{display:grid}
 <main>
 
 <section class="card wide solo-pub-block" id="diasCard">
-  <h2>¿Salimos?</h2>
+  <h2>¿Cómo estará el mar?</h2>
   <div class="dias" id="dias"></div>
-  <div class="small" style="margin-top:8px">Salidas a las 9:00 y a las 11:30 desde el muelle de Sant Elm. Previsión automática: la confirmamos cada mañana.</div>
+  <div class="small" style="margin-top:8px">Estado del mar previsto en Sant Elm por la mañana (9:00-13:00). Previsión automática: si tienes una salida reservada, te la confirmamos cada mañana.</div>
 </section>
 
 <section class="card wide" id="parteCard" style="display:none">
@@ -73,6 +89,7 @@ body.embed .kv.solo-pub-block{display:grid}
   <h2>Ahora</h2>
   <div class="light"><div id="nowDot" class="dot na">…</div><div><div id="nowTitle" style="font-weight:700"></div><ul id="nowReasons" class="reasons"></ul></div></div>
   <div class="kv solo-int-block" id="nowKv" style="margin-top:12px"></div>
+  <div class="wx" id="wx"></div>
   <div class="kv solo-pub-block" id="nowKvPub" style="margin-top:12px"></div>
   <details class="nav solo-pub-block"><summary>Datos para navegantes</summary><div class="kv" id="nowKvNav" style="margin-top:8px"></div></details>
   <div id="err" class="small"></div>
@@ -248,13 +265,15 @@ async function load(){
   const common="&timezone=Europe%2FMadrid&past_days=1&forecast_days=3";
   const wv="wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period,wind_wave_height,wind_wave_direction";
   const waveReq=WAVE_MODELS.map(([m])=>getJSON(`https://marine-api.open-meteo.com/v1/marine?latitude=${CFG.wLat}&longitude=${CFG.wLon}&hourly=${wv}&current=${wv}&models=${m}${common}`));
-  const windReq=WIND_MODELS.map(([m])=>getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${WIND_PT.lat}&longitude=${WIND_PT.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,cape,weather_code,precipitation_probability&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&models=${m}${common}`));
+  const windReq=WIND_MODELS.map(([m])=>getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${WIND_PT.lat}&longitude=${WIND_PT.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,cape,weather_code,precipitation_probability,temperature_2m&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,weather_code,is_day&wind_speed_unit=kn&models=${m}${common}`));
   try{const pr=await fetch("parte.json?t="+Date.now());if(pr.ok)PARTE=await pr.json()}catch(e){}
+  const sstReq=getJSON(`https://marine-api.open-meteo.com/v1/marine?latitude=${CFG.wLat}&longitude=${CFG.wLon}&current=sea_surface_temperature&daily=sea_surface_temperature_max&timezone=Europe%2FMadrid&forecast_days=3`).catch(()=>null);
   const res=await Promise.allSettled([...waveReq,...windReq]);
+  const SST=await sstReq;
   const waves=res.slice(0,WAVE_MODELS.length).map(r=>r.status==="fulfilled"?r.value:null);
   const winds=res.slice(WAVE_MODELS.length).map(r=>r.status==="fulfilled"?r.value:null);
   if(!waves[0]&&!waves[1]){document.getElementById("err").textContent="No se han podido descargar datos de oleaje. Comprueba la conexión a internet.";document.getElementById("upd").textContent="";return}
-  DATA={waves,winds};
+  DATA={waves,winds,sst:SST};
   render();
   document.getElementById("upd").textContent="Actualizado "+new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
 }
@@ -356,12 +375,32 @@ function render(){
   const tl=document.getElementById("timeline");tl.innerHTML=html;
   tl.querySelectorAll(".slot").forEach(el=>{const s=slots[el.dataset.k];const show=()=>{document.getElementById("slotInfo").innerHTML=`<b>${new Date(s.r.t).toLocaleString("es-ES",{weekday:"long",hour:"2-digit",minute:"2-digit"})}</b> · ${LBL[s.e.lvl]} · Ola ${f(s.r.hs,1," m")} (${card(s.r.dir)}) · muelle ${f(s.e.dock,2," m")} · viento ${f(s.r.ws,0)}/${f(s.r.wg,0)} kn ${card(s.r.wd)}${s.e.reasons.length?" — "+s.e.reasons.join("; "):""}`};el.onmouseenter=show;el.onclick=show});
   renderDias(bf);
+  try{renderTiempo()}catch(e){console.error(e)}
   try{drawEvo(ni,bf)}catch(e){console.error(e)}
   if(!window._evoRs){window._evoRs=1;let tm;window.addEventListener("resize",()=>{clearTimeout(tm);tm=setTimeout(()=>{try{drawEvo(nowIndex(),biasFactor())}catch(e){}},200)})}
   drawChart(ni);
   renderObs(bf);
 }
 
+// cielo (código WMO) -> texto e icono
+function skyKind(c){if(c==null)return null;if(c>=95)return"tormenta";if(c>=51)return"lluvia";if(c>=3)return"nublado";if(c===2)return"claros";return"sol"}
+const SKYTXT={sol:"Soleado",claros:"Nubes y claros",nublado:"Nublado",lluvia:"Lluvia",tormenta:"Tormenta"};
+function skyIco(c,sz=34,noche){const k=skyKind(c)||"claros";const sun=noche?`<path d="M6 -12 a13 13 0 1 0 8 20 a10 10 0 0 1 -8 -20z" fill="#f3e3a0"/>`:`<circle r="9" fill="#ffd166"/>`+[...Array(8)].map((_,i)=>`<rect x="-1.6" y="-17" width="3.2" height="5.5" rx="1.6" fill="#ffd166" transform="rotate(${i*45})"/>`).join("");
+  const cloud=(x,y,col)=>`<path transform="translate(${x} ${y})" d="M-16 10 a9 9 0 0 1 1-18 a12 12 0 0 1 23-2 a9 9 0 0 1 9 20 z" fill="${col}"/>`;
+  let g=k==="sol"?sun:k==="claros"?`<g transform="translate(-6 -6) scale(.85)">${sun}</g>`+cloud(4,6,"#e8f1f8"):cloud(0,2,k==="tormenta"?"#9aa8b6":"#d5e1ea");
+  if(k==="lluvia")g+=[-10,-1,8].map(x=>`<rect x="${x}" y="15" width="3.5" height="9" rx="1.7" fill="#7cc6ff" transform="rotate(15 ${x} 15)"/>`).join("");
+  if(k==="tormenta")g+=`<path d="M1 12 L-6 24 L0 24 L-4 34 L8 19 L2 19 L6 12Z" fill="#ffd166"/>`;
+  return `<svg width="${sz}" height="${sz}" viewBox="-30 -26 60 60">${g}</svg>`}
+const ICO_AGUA=`<svg width="34" height="34" viewBox="-28 -30 56 60"><path d="M0 -26 C10 -10 18 0 18 10 a18 18 0 0 1 -36 0 C-18 0 -10 -10 0 -26Z" fill="#33C6AB"/><path d="M-8 10 a8 8 0 0 0 8 8" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/></svg>`;
+const ICO_TERMO=`<svg width="34" height="34" viewBox="-20 -32 40 64"><rect x="-6" y="-28" width="12" height="40" rx="6" fill="none" stroke="#fff" stroke-width="3.5" opacity=".9"/><circle cx="0" cy="17" r="11" fill="#ff8a5c"/><rect x="-2.5" y="-14" width="5" height="30" rx="2.5" fill="#ff8a5c"/></svg>`;
+function renderTiempo(){
+  const _w=DATA.winds.find(x=>x&&x.current&&x.current.temperature_2m!=null);const cw=_w?_w.current:{};const sst=DATA.sst&&DATA.sst.current?DATA.sst.current.sea_surface_temperature:null;
+  const t=[];
+  t.push(`<div class="w">${ICO_AGUA}<div class="k">Agua</div><div class="v">${sst==null?"–":Math.round(sst)+"°"}</div></div>`);
+  t.push(`<div class="w">${ICO_TERMO}<div class="k">Aire</div><div class="v">${cw.temperature_2m==null?"–":Math.round(cw.temperature_2m)+"°"}</div></div>`);
+  const k=skyKind(cw.weather_code);t.push(`<div class="w">${skyIco(cw.weather_code,34,cw.is_day===0)}<div class="k">Cielo</div><div class="v t">${k?(cw.is_day===0&&k==="sol"?"Despejado":SKYTXT[k]):"–"}</div></div>`);
+  document.getElementById("wx").innerHTML=t.join("");
+}
 function renderDias(bf){
   const T=(DATA.waves.find(x=>x)).hourly.time;const now=new Date();const hoy=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   const out=[];
@@ -371,9 +410,15 @@ function renderDias(bf){
     T.forEach((t,i)=>{const d=new Date(t);if(d.toDateString()!==dia.toDateString())return;const h=d.getHours();if(h<9||h>13)return;if(k===0&&d<now&&h<now.getHours())return;const e=evaluate(hourRow(i),bf.f);if(e.lvl>lv){lv=e.lvl;why=e.reasons}});
     if(lv<0)continue;
     const nom=k===0?"Hoy":k===1?"Mañana":dia.toLocaleDateString("es-ES",{weekday:"long"});
-    const v=["Salimos ✓","Justo: se decide en el muelle","No salimos ✗"][lv];
+    const v=["Mar bueno ✓","Mar justo: precaución","Mar malo ✗"][lv];
     const d=lv===0?"Mar dentro de nuestros límites":why.slice(0,2).join(" · ");
-    out.push(`<div class="dia ${CLS[lv]}"><div class="q">${nom} · ${dia.toLocaleDateString("es-ES",{day:"numeric",month:"short"})}</div><div class="v">${v}</div><div class="d">${d}</div></div>`)}
+    // tiempo del día: temperatura máxima, cielo más frecuente por la mañana y agua
+    const _w0=DATA.winds.find(x=>x&&x.hourly&&x.hourly.temperature_2m);const W0=_w0?_w0.hourly:{};let tmax=null;const codes=[];
+    (W0.time||[]).forEach((t,i)=>{const dd=new Date(t);if(dd.toDateString()!==dia.toDateString())return;const h=dd.getHours();const tt=W0.temperature_2m&&W0.temperature_2m[i];if(tt!=null&&h>=8&&h<=19&&(tmax==null||tt>tmax))tmax=tt;if(h>=9&&h<=14&&W0.weather_code&&W0.weather_code[i]!=null)codes.push(W0.weather_code[i])});
+    const sev=c=>c>=95?4:c>=51?3:c>=3?2:c===2?1:0;let cc=null;if(codes.length){const cnt={};codes.forEach(c=>{const s=sev(c);cnt[s]=(cnt[s]||0)+1});const top=+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||b-a)[0];cc=codes.some(c=>c>=95)?95:codes.find(c=>sev(c)===top)}
+    const ds=DATA.sst&&DATA.sst.daily?DATA.sst.daily.time.indexOf(`${dia.getFullYear()}-${String(dia.getMonth()+1).padStart(2,"0")}-${String(dia.getDate()).padStart(2,"0")}`):-1;const agua=ds>=0?DATA.sst.daily.sea_surface_temperature_max[ds]:null;
+    const tw=(cc!=null||tmax!=null)?`<div class="tw">${cc!=null?skyIco(cc,26):""}<span>${cc!=null?SKYTXT[skyKind(cc)]:""}${tmax!=null?" · "+Math.round(tmax)+"°":""}${agua!=null?" · agua "+Math.round(agua)+"°":""}</span></div>`:"";
+    out.push(`<div class="dia ${CLS[lv]}"><div class="q">${nom} · ${dia.toLocaleDateString("es-ES",{day:"numeric",month:"short"})}</div><div class="v">${v}</div><div class="d">${d}</div>${tw}</div>`)}
   document.getElementById("dias").innerHTML=out.join("")||'<div class="small">Sin datos de previsión ahora mismo.</div>';
 }
 

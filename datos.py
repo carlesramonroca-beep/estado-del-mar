@@ -3,7 +3,7 @@
 
 Uso: python3 datos.py [dias]   (dias de previsión, 2 por defecto; 3 para el parte de la tarde)
 
-Fuentes: Open-Meteo (oleaje MFWAM, ECMWF WAM, DWD GWAM y viento), boya de Dragonera
+Fuentes: Open-Meteo (oleaje MFWAM, ECMWF WAM, DWD GWAM, viento, temperatura del aire y del agua, cielo), boya de Dragonera
 (Puertos del Estado, estación 2820) y boletín costero de AEMET para Illes Balears (FQXX44).
 """
 import json
@@ -47,8 +47,8 @@ def oleaje(modelo):
 def viento():
     d = json.loads(get(
         "https://api.open-meteo.com/v1/forecast?latitude=39.579&longitude=2.349"
-        "&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m"
-        "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,cape,weather_code,precipitation_probability"
+        "&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,weather_code,cloud_cover"
+        "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,cape,weather_code,precipitation_probability,temperature_2m,cloud_cover"
         f"&wind_speed_unit=kn&forecast_days={DIAS}&timezone=Europe%2FMadrid"))
     h = d["hourly"]
     horas = [
@@ -56,6 +56,15 @@ def viento():
         for i, t in enumerate(h["time"]) if t[11:13] in HORAS
     ]
     return {"ahora": d.get("current"), "horas": horas}
+
+
+def agua():
+    d = json.loads(get(
+        "https://marine-api.open-meteo.com/v1/marine?latitude=39.56&longitude=2.30"
+        "&current=sea_surface_temperature&daily=sea_surface_temperature_max"
+        f"&forecast_days={DIAS}&timezone=Europe%2FMadrid"))
+    return {"ahora_c": (d.get("current") or {}).get("sea_surface_temperature"),
+            "por_dia": dict(zip(d["daily"]["time"], d["daily"]["sea_surface_temperature_max"]))}
 
 
 def boya():
@@ -86,7 +95,8 @@ def aemet():
 if __name__ == "__main__":
     salida = {
         "oleaje": {m: seguro(lambda m=m: oleaje(m)) for m in ("meteofrance_wave", "ecmwf_wam025", "gwam")},
-        "viento": seguro(viento),
+        "viento": seguro(viento),  # incluye temperatura del aire, nubes y código de tiempo
+        "temperatura_agua": seguro(agua),
         "boya_dragonera": seguro(boya),
         "aemet_costero_baleares": seguro(aemet),
     }
